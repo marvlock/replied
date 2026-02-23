@@ -299,31 +299,32 @@ export default function InboxPage() {
                                         >
                                             <Card className="border-stone-800 bg-stone-900/20 backdrop-blur shadow-xl hover:bg-stone-900/30 transition-all border-l-4 border-l-stone-700">
                                                 <CardHeader className="pb-3 px-8 pt-8">
-                                                    <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                                         <div className="flex items-center gap-2 text-[10px] text-stone-500 uppercase tracking-widest font-bold">
                                                             <MessageSquareQuote className="w-3 h-3" />
-                                                            Anonymous Message • {new Date(msg.created_at).toLocaleDateString()}
+                                                            Message • {new Date(msg.created_at).toLocaleDateString()}
                                                         </div>
-                                                        <div className="flex gap-2">
+                                                        <div className="flex items-center gap-2 self-end sm:self-auto">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 disabled={archiving === msg.id}
                                                                 onClick={() => handleArchive(msg.id)}
-                                                                className="text-stone-500 hover:text-stone-200 hover:bg-white/5 rounded-lg px-3"
+                                                                className="text-stone-500 hover:text-stone-200 hover:bg-white/5 rounded-lg h-8 px-3 text-[10px] uppercase font-bold tracking-wider"
                                                             >
-                                                                <Archive className="w-4 h-4 mr-2" />
+                                                                <Archive className="w-3.5 h-3.5 mr-2" />
                                                                 Silence
                                                             </Button>
+
                                                             <Dialog open={messageToDelete === msg.id} onOpenChange={(open) => !open && setMessageToDelete(null)}>
                                                                 <DialogTrigger asChild>
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
                                                                         onClick={() => setMessageToDelete(msg.id)}
-                                                                        className="text-stone-700 hover:text-red-500 hover:bg-red-500/10 shrink-0 rounded-lg"
+                                                                        className="text-stone-700 hover:text-red-500 hover:bg-red-500/10 h-8 w-8 rounded-lg"
                                                                     >
-                                                                        <Trash2 className="w-4 h-4" />
+                                                                        <Trash2 className="w-3.5 h-3.5" />
                                                                     </Button>
                                                                 </DialogTrigger>
                                                                 <DialogContent className="bg-stone-950 border-stone-800 text-white max-w-sm">
@@ -466,8 +467,8 @@ export default function InboxPage() {
                             )
                         )}
                     </AnimatePresence>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 }
