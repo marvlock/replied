@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     avatar_url TEXT,
     bio TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    is_paused BOOLEAN DEFAULT FALSE,
+    blocked_phrases TEXT[] DEFAULT '{}'
 );
 
 -- Create messages table
@@ -16,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     content TEXT NOT NULL,
     is_anonymous BOOLEAN DEFAULT TRUE NOT NULL,
     status TEXT DEFAULT 'pending'::text NOT NULL, -- pending, replied, archived
+    sender_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

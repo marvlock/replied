@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings } from 'lucide-react';
+import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function InboxPage() {
@@ -84,6 +84,30 @@ export default function InboxPage() {
         }
     };
 
+    const handleDelete = async (messageId: string) => {
+        if (!confirm('Are you sure you want to delete this message? It will be gone forever.')) return;
+
+        const { data: { session } } = await supabase.auth.getSession();
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`
+                }
+            });
+
+            if (response.ok) {
+                toast.success('Message deleted');
+                setMessages(prev => prev.filter(m => m.id !== messageId));
+            } else {
+                toast.error('Failed to delete');
+            }
+        } catch (error) {
+            toast.error('Connection error');
+        }
+    };
+
     if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center bg-background">Loading Inbox...</div>;
     if (!user) return <div className="min-h-screen flex items-center justify-center bg-background">Please sign in to view your inbox.</div>;
 
@@ -137,9 +161,19 @@ export default function InboxPage() {
                                                 <MessageSquareQuote className="w-3 h-3" />
                                                 Anonymous Message • {new Date(msg.created_at).toLocaleDateString()}
                                             </div>
-                                            <CardTitle className="text-lg leading-relaxed font-medium text-stone-200">
-                                                "{msg.content}"
-                                            </CardTitle>
+                                            <div className="flex items-start justify-between gap-4">
+                                                <CardTitle className="text-lg leading-relaxed font-medium text-stone-200">
+                                                    "{msg.content}"
+                                                </CardTitle>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(msg.id)}
+                                                    className="text-stone-600 hover:text-red-500 hover:bg-red-500/10 -mt-2 -mr-2 shrink-0"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </CardHeader>
                                         <CardContent>
                                             {replyingTo === msg.id ? (

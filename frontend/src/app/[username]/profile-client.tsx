@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lock } from 'lucide-react';
 
 export default function PublicProfileClient({ username }: { username: string }) {
     const { user, signInWithGoogle, loading: authLoading } = useAuth();
@@ -61,11 +62,6 @@ export default function PublicProfileClient({ username }: { username: string }) 
     }, [username]);
 
     const handleSubmit = async () => {
-        if (!user) {
-            toast.error('Please sign in with Google to send a message');
-            return;
-        }
-
         if (!message.trim()) {
             toast.error('Message cannot be empty');
             return;
@@ -148,37 +144,41 @@ export default function PublicProfileClient({ username }: { username: string }) 
                     >
                         <Card className="border-stone-800/50 bg-stone-900/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden">
                             <CardContent className="p-6 space-y-4">
-                                <Textarea
-                                    placeholder="Ask me anything anonymously..."
-                                    className="min-h-[140px] bg-transparent border-none focus-visible:ring-0 text-lg p-0 resize-none text-stone-200 placeholder:text-stone-600 shadow-none focus:ring-0"
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    maxLength={500}
-                                />
+                                {profile.is_paused ? (
+                                    <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                                            <Lock className="w-5 h-5 text-red-500" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h3 className="text-white font-bold">Inbox Paused</h3>
+                                            <p className="text-stone-500 text-sm max-w-xs mx-auto">This user has temporarily paused new messages. Check back later!</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Textarea
+                                            placeholder="Ask me anything anonymously..."
+                                            className="min-h-[140px] bg-transparent border-none focus-visible:ring-0 text-lg p-0 resize-none text-stone-200 placeholder:text-stone-600 shadow-none focus:ring-0"
+                                            value={message}
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            maxLength={500}
+                                        />
 
-                                <div className="flex items-center justify-between pt-4 border-t border-stone-800/50">
-                                    <span className="text-[10px] font-mono text-stone-600 uppercase tracking-widest">
-                                        {message.length}/500
-                                    </span>
-                                    {!user && !authLoading ? (
-                                        <Button
-                                            onClick={signInWithGoogle}
-                                            size="sm"
-                                            className="bg-white text-black hover:bg-stone-200 rounded-full px-6 font-bold text-xs"
-                                        >
-                                            Login to Post
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            disabled={sending || !message.trim()}
-                                            onClick={handleSubmit}
-                                            size="sm"
-                                            className="bg-stone-100 text-black hover:bg-white rounded-full px-6 font-bold text-xs shadow-xl shadow-white/5 active:scale-95 transition-all"
-                                        >
-                                            {sending ? 'Sending...' : 'Send Message'}
-                                        </Button>
-                                    )}
-                                </div>
+                                        <div className="flex items-center justify-between pt-4 border-t border-stone-800/50">
+                                            <span className="text-[10px] font-mono text-stone-600 uppercase tracking-widest">
+                                                {message.length}/500
+                                            </span>
+                                            <Button
+                                                disabled={sending || !message.trim()}
+                                                onClick={handleSubmit}
+                                                size="sm"
+                                                className="bg-stone-100 text-black hover:bg-white rounded-full px-6 font-bold text-xs shadow-xl shadow-white/5 active:scale-95 transition-all"
+                                            >
+                                                {sending ? 'Sending...' : 'Send Message'}
+                                            </Button>
+                                        </div>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </motion.div>

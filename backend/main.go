@@ -1,18 +1,24 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"github.com/supabase-community/gotrue-go/types"
 	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
+
+var rdb *redis.Client
+var ctx = context.Background()
 
 var bannedWords = []string{"badword1", "badword2", "spamlink", "offensive"} // We can expand this
 
@@ -43,6 +49,20 @@ func main() {
 	client, err := supabase.NewClient(supabaseURL, supabaseKey, nil)
 	if err != nil {
 		log.Fatalf("cannot initialize supabase client: %v", err)
+	}
+
+	// Initialize Redis for rate limiting
+	redisURL := os.Getenv("UPSTASH_REDIS_URL")
+	if redisURL != "" {
+		opt, err := redis.ParseURL(redisURL)
+		if err != nil {
+			log.Printf("Warning: Invalid Redis URL: %v", err)
+		} else {
+			rdb = redis.NewClient(opt)
+			log.Println("Connected to Redis for rate limiting")
+		}
+	} else {
+		log.Println("Warning: UPSTASH_REDIS_URL not set. Rate limiting will be disabled.")
 	}
 
 	r := gin.Default()
@@ -153,8 +173,31 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "published", "reply": newReply})
 	})
 
-	// Public: Send a message to a user
-	r.POST("/send", authMiddleware, func(c *gin.Context) {
+	// Public: Send a message to a user (Allows anonymous if rate limited)
+	r.POST("/send", func(c *gin.Context) {
+		// 🛡️ Rate Limiting Check
+		if rdb != nil {
+			ip := c.ClientIP()
+			key := "ratelimit:send:" + ip
+
+			// Allow 5 messages per 10 minutes
+			limit := 5
+			window := 10 * time.Minute
+
+			count, err := rdb.Incr(ctx, key).Result()
+			if err != nil {
+				log.Printf("Redis error: %v", err)
+			} else {
+				if count == 1 {
+					rdb.Expire(ctx, key, window)
+				}
+				if count > int64(limit) {
+					c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many messages. Please wait 10 minutes."})
+					return
+				}
+			}
+		}
+
 		var body struct {
 			ReceiverID string `json:"receiver_id" binding:"required"`
 			Content    string `json:"content" binding:"required"`
@@ -165,24 +208,66 @@ func main() {
 			return
 		}
 
-		// 🛡️ Safety check: Profanity
+		// 🛡️ Safety check 1: Global Profanity
 		if containsProfanity(body.Content) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Message contains prohibited content"})
 			return
 		}
 
-		user, _ := c.Get("user")
-		supabaseUser := user.(types.User)
+		// 🛡️ Safety check 2: Check if receiver is paused or has custom blocks
+		var receiverProfile struct {
+			IsPaused       bool     `json:"is_paused"`
+			BlockedPhrases []string `json:"blocked_phrases"`
+		}
+
+		_, err := client.From("profiles").
+			Select("is_paused, blocked_phrases", "", false).
+			Eq("id", body.ReceiverID).
+			Single().
+			ExecuteTo(&receiverProfile)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify receiver status"})
+			return
+		}
+
+		if receiverProfile.IsPaused {
+			c.JSON(http.StatusForbidden, gin.H{"error": "This inbox is currently paused by the owner"})
+			return
+		}
+
+		// 🛡️ Safety check 3: User-specific blocked phrases
+		contentLower := strings.ToLower(body.Content)
+		for _, phrase := range receiverProfile.BlockedPhrases {
+			if strings.Contains(contentLower, strings.ToLower(phrase)) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Message contains a phrase blocked by the user"})
+				return
+			}
+		}
+
+		// Optional Auth: If token provided, link to sender
+		var senderID *string
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			token := authHeader[len("Bearer "):]
+			userResponse, err := client.Auth.WithToken(token).GetUser()
+			if err == nil {
+				id := userResponse.User.ID.String()
+				senderID = &id
+			}
+		}
 
 		messageData := map[string]interface{}{
 			"receiver_id": body.ReceiverID,
-			"sender_id":   supabaseUser.ID.String(),
 			"content":     body.Content,
 			"status":      "pending",
 		}
+		if senderID != nil {
+			messageData["sender_id"] = *senderID
+		}
 
 		var newMessage []interface{}
-		_, err := client.From("messages").Insert(messageData, false, "", "", "").ExecuteTo(&newMessage)
+		_, err = client.From("messages").Insert(messageData, false, "", "", "").ExecuteTo(&newMessage)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send: " + err.Error()})
@@ -216,12 +301,86 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "reported"})
 	})
 
+	// Delete Message
+	r.DELETE("/messages/:id", authMiddleware, func(c *gin.Context) {
+		id := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err = client.From("messages").
+			Delete("", "").
+			Eq("id", id).
+			Eq("receiver_id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete message"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	})
+
+	// Toggle Inbox Pause
+	r.POST("/profile/toggle-pause", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var body struct {
+			IsPaused bool `json:"is_paused"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid body"})
+			return
+		}
+
+		_, _, err = client.From("profiles").
+			Update(map[string]interface{}{"is_paused": body.IsPaused}, "", "").
+			Eq("id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to toggle pause"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "updated"})
+	})
+
+	// Update Blocked Phrases
+	r.POST("/profile/blocked-phrases", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var body struct {
+			Phrases []string `json:"phrases"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid body"})
+			return
+		}
+
+		_, _, err := client.From("profiles").
+			Update(map[string]interface{}{"blocked_phrases": body.Phrases}, "", "").
+			Eq("id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update blocked phrases"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "updated"})
+	})
+
 	// Update Profile: Set bio, display name, etc.
 	r.PUT("/profile", authMiddleware, func(c *gin.Context) {
 		var body struct {
-			DisplayName string `json:"display_name"`
-			Bio         string `json:"bio"`
-			AvatarURL   string `json:"avatar_url"`
+			DisplayName    string   `json:"display_name"`
+			Bio            string   `json:"bio"`
+			AvatarURL      string   `json:"avatar_url"`
+			IsPaused       bool     `json:"is_paused"`
+			BlockedPhrases []string `json:"blocked_phrases"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -233,10 +392,12 @@ func main() {
 		supabaseUser := user.(types.User)
 
 		updateData := map[string]interface{}{
-			"display_name": body.DisplayName,
-			"bio":          body.Bio,
-			"avatar_url":   body.AvatarURL,
-			"updated_at":   "now()",
+			"display_name":    body.DisplayName,
+			"bio":             body.Bio,
+			"avatar_url":      body.AvatarURL,
+			"is_paused":       body.IsPaused,
+			"blocked_phrases": body.BlockedPhrases,
+			"updated_at":      "now()",
 		}
 
 		var updatedProfile []interface{}

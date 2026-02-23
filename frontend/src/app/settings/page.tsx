@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode } from 'lucide-react';
+import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X } from 'lucide-react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth();
@@ -22,7 +23,10 @@ export default function SettingsPage() {
     const [formData, setFormData] = useState({
         display_name: '',
         bio: '',
-        username: ''
+        username: '',
+        avatar_url: '',
+        is_paused: false,
+        blocked_phrases: [] as string[]
     });
 
     useEffect(() => {
@@ -42,7 +46,10 @@ export default function SettingsPage() {
             setFormData({
                 display_name: data.display_name || '',
                 bio: data.bio || '',
-                username: data.username || ''
+                username: data.username || '',
+                avatar_url: data.avatar_url || '',
+                is_paused: data.is_paused || false,
+                blocked_phrases: data.blocked_phrases || []
             });
         }
         setLoading(false);
@@ -86,7 +93,7 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
-            <div className="max-w-2xl mx-auto space-y-8">
+            <div className="max-w-2xl mx-auto space-y-12">
                 <header className="flex items-center justify-between">
                     <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -95,7 +102,7 @@ export default function SettingsPage() {
                     <h1 className="text-xl font-bold tracking-tighter">Settings</h1>
                 </header>
 
-                {/* Public Link Card */}
+                {/* Sharing Link Card */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     <Card className="bg-stone-900/30 border-stone-800 shadow-2xl">
                         <CardHeader>
@@ -109,7 +116,7 @@ export default function SettingsPage() {
                         <CardContent className="space-y-4">
                             <div className="flex gap-2">
                                 <div className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-400 font-mono overflow-hidden whitespace-nowrap">
-                                    {typeof window !== 'undefined' ? `${window.location.origin}/${formData.username}` : ''}
+                                    {typeof window !== 'undefined' ? `${window.location.host}/${formData.username}` : ''}
                                 </div>
                                 <Button
                                     variant="outline"
@@ -132,7 +139,7 @@ export default function SettingsPage() {
                                         <div className="flex flex-col items-center justify-center p-8 space-y-6">
                                             <div className="p-4 bg-white rounded-2xl">
                                                 <img
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/${formData.username}` : '')}`}
+                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.host}/${formData.username}` : '')}`}
                                                     alt="QR Code"
                                                     className="w-48 h-48"
                                                 />
@@ -143,6 +150,74 @@ export default function SettingsPage() {
                                         </div>
                                     </DialogContent>
                                 </Dialog>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Moderation Controls */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                    <Card className="bg-stone-900/30 border-stone-800 shadow-2xl">
+                        <CardHeader>
+                            <div className="flex items-center gap-2 text-red-500 mb-2">
+                                <Shield className="w-4 h-4" />
+                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Safety</span>
+                            </div>
+                            <CardTitle className="text-white">Moderation</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-stone-950 border border-stone-800">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 font-medium text-stone-200">
+                                        <Lock className="w-4 h-4 text-stone-500" />
+                                        Pause Inbox
+                                    </div>
+                                    <p className="text-xs text-stone-500">Stop receiving new messages temporarily.</p>
+                                </div>
+                                <Switch
+                                    checked={formData.is_paused}
+                                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_paused: checked })}
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 font-medium text-stone-200">
+                                        <Ghost className="w-4 h-4 text-stone-500" />
+                                        Blocked Phrases
+                                    </div>
+                                    <p className="text-xs text-stone-500">Messages containing these words will be rejected.</p>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="Add word or phrase..."
+                                        className="bg-stone-950 border-stone-800 h-10 rounded-xl"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                const val = e.currentTarget.value.trim();
+                                                if (val && !formData.blocked_phrases.includes(val)) {
+                                                    setFormData({ ...formData, blocked_phrases: [...formData.blocked_phrases, val] });
+                                                    e.currentTarget.value = '';
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.blocked_phrases.map((phrase) => (
+                                        <div key={phrase} className="flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-xs border border-stone-700">
+                                            {phrase}
+                                            <button
+                                                onClick={() => setFormData({ ...formData, blocked_phrases: formData.blocked_phrases.filter(p => p !== phrase) })}
+                                                className="hover:text-white"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -190,7 +265,7 @@ export default function SettingsPage() {
                     </Card>
                 </motion.div>
 
-                <footer className="text-center pt-12">
+                <footer className="text-center pt-12 pb-20">
                     <div className="flex items-center justify-center gap-2 text-stone-700">
                         <Shield className="w-4 h-4" />
                         <span className="text-[10px] font-mono uppercase tracking-[0.2em]">End-to-end Encrypted Messaging</span>
