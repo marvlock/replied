@@ -234,7 +234,7 @@ export default function InboxPage() {
     return (
         <div className="min-h-screen bg-black p-4 md:p-8">
             <div className="max-w-4xl mx-auto">
-                <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+                <header className="flex flex-col items-center md:flex-row md:items-center justify-between mb-12 gap-6 text-center md:text-left">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-white">{view === 'inbox' ? 'Your Inbox' : 'The Ledger'}</h1>
                         <p className="text-stone-400 mt-1 font-serif italic text-sm">
@@ -243,9 +243,9 @@ export default function InboxPage() {
                                 : `Reviewing ${historyMessages.length} conversations`}
                         </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history')} className="bg-white/5 p-1 rounded-xl w-full sm:w-auto">
-                            <TabsList className="bg-transparent border-none grid grid-cols-2 sm:flex">
+                    <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 w-full md:w-auto">
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history')} className="bg-white/5 p-1 rounded-xl w-full sm:w-64">
+                            <TabsList className="bg-transparent border-none w-full grid grid-cols-2">
                                 <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-4 gap-2 transition-all">
                                     <InboxIcon className="w-4 h-4" />
                                     Inbox
@@ -258,13 +258,13 @@ export default function InboxPage() {
                         </Tabs>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <Link href="/settings" className="flex-1 sm:flex-none">
-                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none">
+                            <Link href="/settings" className="flex-1">
+                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
                                     <Settings className="w-4 h-4 mr-2" />
                                     Settings
                                 </Button>
                             </Link>
-                            <Button variant="ghost" size="sm" onClick={signOut} className="flex-1 sm:flex-none text-stone-500 hover:text-white border border-stone-800 md:border-none">
+                            <Button variant="ghost" size="sm" onClick={signOut} className="flex-1 text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
                                 <LogOut className="w-4 h-4 mr-2" />
                                 Sign Out
                             </Button>
