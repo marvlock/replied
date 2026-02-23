@@ -147,8 +147,8 @@ export default function SettingsPage() {
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
             <div className="max-w-2xl mx-auto space-y-12">
-                <header className="flex items-center justify-between">
-                    <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors text-sm">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         Back to Inbox
                     </Link>

@@ -76,10 +76,10 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-7xl md:text-[11rem] font-bold tracking-tighter leading-[0.8] mb-12 drop-shadow-2xl"
+            className="text-6xl md:text-[11rem] font-bold tracking-tighter leading-[0.9] md:leading-[0.8] mb-12 drop-shadow-2xl"
           >
             Curated <br />
-            <span className="text-stone-300 italic font-serif opacity-90">Silence</span>
+            <span className="text-stone-300 italic font-serif opacity-90 shadow-white/5">Silence</span>
           </motion.h1>
 
           <motion.p
@@ -118,16 +118,16 @@ export default function Home() {
           className="w-full max-w-4xl mt-12 mb-40 relative group"
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10 pointer-events-none" />
-          <div className="bg-white/[0.03] border border-white/10 rounded-[3rem] p-4 md:p-16 backdrop-blur-md overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+          <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-16 backdrop-blur-md overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
             <div className="flex flex-col gap-10 scale-95 md:scale-100 origin-top">
               {/* Question */}
-              <div className="max-w-[85%] p-8 rounded-3xl rounded-tl-none bg-black/60 border border-white/5 text-stone-200 font-serif italic text-xl md:text-2xl shadow-2xl leading-relaxed">
+              <div className="max-w-[95%] md:max-w-[85%] p-6 md:p-8 rounded-2xl md:rounded-3xl rounded-tl-none bg-black/60 border border-white/5 text-stone-200 font-serif italic text-lg md:text-2xl shadow-2xl leading-relaxed">
                 "What's the one thing you've learned about leadership that no one tells you?"
               </div>
               {/* Reply */}
-              <div className="max-w-[85%] self-end p-10 rounded-[2.5rem] rounded-br-none bg-white text-black leading-relaxed shadow-[0_20px_60px_rgba(255,255,255,0.1)]">
-                <p className="font-mono text-[10px] uppercase tracking-[0.3em] mb-4 opacity-50">Response_01</p>
-                <div className="text-xl md:text-2xl font-serif italic tracking-tight">
+              <div className="max-w-[95%] md:max-w-[85%] self-end p-8 md:p-10 rounded-[2rem] md:rounded-[2.5rem] rounded-br-none bg-white text-black leading-relaxed shadow-[0_20px_60px_rgba(255,255,255,0.1)]">
+                <p className="font-mono text-[9px] md:text-[10px] uppercase tracking-[0.3em] mb-4 opacity-50">Response_01</p>
+                <div className="text-lg md:text-2xl font-serif italic tracking-tight">
                   "True leadership isn't about having the answers. It's about being the person people trust enough to admit they don't have them either."
                 </div>
               </div>

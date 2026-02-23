@@ -234,18 +234,18 @@ export default function InboxPage() {
     return (
         <div className="min-h-screen bg-black p-4 md:p-8">
             <div className="max-w-4xl mx-auto">
-                <header className="flex items-center justify-between mb-12">
+                <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-white">{view === 'inbox' ? 'Your Inbox' : 'The Ledger'}</h1>
-                        <p className="text-stone-400 mt-1 font-serif italic">
+                        <p className="text-stone-400 mt-1 font-serif italic text-sm">
                             {view === 'inbox'
-                                ? `Found ${messages.length} messages waiting for a response`
-                                : `Reviewing ${historyMessages.length} past conversations`}
+                                ? `Found ${messages.length} messages waiting`
+                                : `Reviewing ${historyMessages.length} conversations`}
                         </p>
                     </div>
-                    <div className="flex items-center gap-6">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history')} className="bg-white/5 p-1 rounded-xl">
-                            <TabsList className="bg-transparent border-none">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history')} className="bg-white/5 p-1 rounded-xl w-full sm:w-auto">
+                            <TabsList className="bg-transparent border-none grid grid-cols-2 sm:flex">
                                 <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-4 gap-2 transition-all">
                                     <InboxIcon className="w-4 h-4" />
                                     Inbox
@@ -257,14 +257,14 @@ export default function InboxPage() {
                             </TabsList>
                         </Tabs>
 
-                        <div className="flex items-center gap-2">
-                            <Link href="/settings">
-                                <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Link href="/settings" className="flex-1 sm:flex-none">
+                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none">
                                     <Settings className="w-4 h-4 mr-2" />
                                     Settings
                                 </Button>
                             </Link>
-                            <Button variant="ghost" size="sm" onClick={signOut} className="text-stone-500 hover:text-white">
+                            <Button variant="ghost" size="sm" onClick={signOut} className="flex-1 sm:flex-none text-stone-500 hover:text-white border border-stone-800 md:border-none">
                                 <LogOut className="w-4 h-4 mr-2" />
                                 Sign Out
                             </Button>
