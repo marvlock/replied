@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -30,6 +33,42 @@ func containsProfanity(text string) bool {
 		}
 	}
 	return false
+}
+
+func sendEmailNotification(toEmail, username, content string) {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		log.Println("RESEND_API_KEY not set, skipping email notification")
+		return
+	}
+
+	url := "https://api.resend.com/emails"
+
+	body := map[string]interface{}{
+		"from":    "Replied <noreply@marvlock.dev>",
+		"to":      []string{toEmail},
+		"subject": "New Anonymous Message Received!",
+		"html":    fmt.Sprintf("<strong>Hi %s!</strong><br><br>You just received a new anonymous message:<br><br><em>\"%s\"</em><br><br><a href=\"http://localhost:3000/inbox\">Go to your inbox to reply</a>", username, content),
+	}
+
+	jsonBody, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Failed to send email: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		log.Printf("Resend API error: status %d", resp.StatusCode)
+	} else {
+		log.Println("Email notification sent successfully")
+	}
 }
 
 func main() {
@@ -218,10 +257,12 @@ func main() {
 		var receiverProfile struct {
 			IsPaused       bool     `json:"is_paused"`
 			BlockedPhrases []string `json:"blocked_phrases"`
+			Email          string   `json:"email"`
+			Username       string   `json:"username"`
 		}
 
 		_, err := client.From("profiles").
-			Select("is_paused, blocked_phrases", "", false).
+			Select("is_paused, blocked_phrases, email, username", "", false).
 			Eq("id", body.ReceiverID).
 			Single().
 			ExecuteTo(&receiverProfile)
@@ -272,6 +313,11 @@ func main() {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send: " + err.Error()})
 			return
+		}
+
+		// 📧 Send Email Notification (Non-blocking)
+		if receiverProfile.Email != "" {
+			go sendEmailNotification(receiverProfile.Email, receiverProfile.Username, body.Content)
 		}
 
 		c.JSON(http.StatusCreated, gin.H{"status": "sent"})

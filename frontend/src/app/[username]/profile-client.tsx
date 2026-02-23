@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/use-auth';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,10 +10,28 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 
+interface Profile {
+    id: string;
+    username: string;
+    display_name?: string;
+    avatar_url?: string;
+    bio?: string;
+    is_paused: boolean;
+}
+
+interface Conversation {
+    id: string;
+    content: string;
+    created_at: string;
+    replies: {
+        content: string;
+        created_at: string;
+    }[];
+}
+
 export default function PublicProfileClient({ username }: { username: string }) {
-    const { user, signInWithGoogle, loading: authLoading } = useAuth();
-    const [profile, setProfile] = useState<any>(null);
-    const [publishedPairs, setPublishedPairs] = useState<any[]>([]);
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [publishedPairs, setPublishedPairs] = useState<Conversation[]>([]);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -62,8 +80,8 @@ export default function PublicProfileClient({ username }: { username: string }) 
     }, [username]);
 
     const handleSubmit = async () => {
-        if (!message.trim()) {
-            toast.error('Message cannot be empty');
+        if (!profile || !message.trim()) {
+            if (!message.trim()) toast.error('Message cannot be empty');
             return;
         }
 
@@ -90,7 +108,7 @@ export default function PublicProfileClient({ username }: { username: string }) 
                 const errData = await response.json();
                 toast.error(errData.error || 'Failed to send');
             }
-        } catch (error: any) {
+        } catch {
             toast.error('Connection error');
         } finally {
             setSending(false);
@@ -119,7 +137,14 @@ export default function PublicProfileClient({ username }: { username: string }) 
                         <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-stone-800 to-stone-950 p-1 shadow-2xl">
                             <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center border border-white/10">
                                 {profile.avatar_url ? (
-                                    <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-700" />
+                                    <Image
+                                        src={profile.avatar_url}
+                                        alt={profile.display_name || 'Profile'}
+                                        width={96}
+                                        height={96}
+                                        unoptimized
+                                        className="w-full h-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-700"
+                                    />
                                 ) : (
                                     <span className="text-3xl font-light text-stone-500">{profile.display_name?.[0]}</span>
                                 )}
@@ -130,7 +155,7 @@ export default function PublicProfileClient({ username }: { username: string }) 
                             <h1 className="text-4xl font-bold tracking-tighter text-white">{profile.display_name || profile.username}</h1>
                             {profile.bio && (
                                 <p className="max-w-md mx-auto text-stone-400 leading-relaxed italic text-sm">
-                                    "{profile.bio}"
+                                    &quot;{profile.bio}&quot;
                                 </p>
                             )}
                             <p className="text-stone-500 font-mono text-[9px] uppercase tracking-[0.3em]">Curated Conversations</p>
@@ -217,14 +242,14 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                             <div className="max-w-[85%] space-y-2 text-left">
                                                 <span className="text-[9px] font-mono text-stone-600 uppercase tracking-widest">Anonymous Ask</span>
                                                 <div className="p-5 rounded-2xl rounded-tl-none bg-stone-900/30 border border-stone-800/50 text-stone-400 leading-relaxed italic">
-                                                    "{pair.content}"
+                                                    &quot;{pair.content}&quot;
                                                 </div>
                                             </div>
 
                                             {/* Response */}
                                             {pair.replies?.[0] && (
                                                 <div className="ml-auto max-w-[85%] space-y-2 text-right">
-                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest">{profile.display_name || profile.username}'s Reply</span>
+                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest">{profile.display_name || profile.username}&apos;s Reply</span>
                                                     <div className="p-6 rounded-3xl rounded-br-none bg-gradient-to-br from-stone-800/40 to-black border border-white/5 text-white leading-relaxed shadow-2xl">
                                                         {pair.replies[0].content}
                                                     </div>

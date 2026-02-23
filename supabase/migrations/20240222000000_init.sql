@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     display_name TEXT,
     avatar_url TEXT,
     bio TEXT,
+    email TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     is_paused BOOLEAN DEFAULT FALSE,
@@ -73,12 +74,13 @@ CREATE POLICY "Users can create replies to their messages" ON public.replies
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, display_name, avatar_url)
+  INSERT INTO public.profiles (id, username, display_name, avatar_url, email)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
     COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    new.raw_user_meta_data->>'avatar_url'
+    new.raw_user_meta_data->>'avatar_url',
+    new.email
   );
   RETURN new;
 END;

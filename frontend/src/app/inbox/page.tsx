@@ -4,25 +4,60 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Message {
+    id: string;
+    content: string;
+    created_at: string;
+    status: 'pending' | 'replied' | 'archived';
+}
+
 export default function InboxPage() {
     const { user, signOut, loading: authLoading } = useAuth();
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [publishing, setPublishing] = useState(false);
 
     useEffect(() => {
-        if (user) {
-            fetchMessages();
-        }
+        if (!user) return;
+
+        fetchMessages();
+
+        // Subscribe to real-time updates for new messages
+        const channel = supabase
+            .channel(`inbox-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `receiver_id=eq.${user.id}`
+                },
+                (payload) => {
+                    const newMessage = payload.new as Message;
+                    // Only add if it's pending (though the filter should handle most)
+                    if (newMessage && newMessage.status === 'pending') {
+                        setMessages(prev => [newMessage, ...prev]);
+                        toast('New message received!', {
+                            icon: <InboxIcon className="w-4 h-4" />
+                        });
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     const fetchMessages = async () => {
@@ -41,7 +76,7 @@ export default function InboxPage() {
             } else {
                 toast.error('Failed to fetch inbox');
             }
-        } catch (error) {
+        } catch {
             toast.error('Backend connection error');
         } finally {
             setLoading(false);
@@ -77,7 +112,7 @@ export default function InboxPage() {
                 const error = await response.json();
                 toast.error(error.error || 'Failed to publish');
             }
-        } catch (error) {
+        } catch {
             toast.error('Connection error');
         } finally {
             setPublishing(false);
@@ -103,13 +138,29 @@ export default function InboxPage() {
             } else {
                 toast.error('Failed to delete');
             }
-        } catch (error) {
+        } catch {
             toast.error('Connection error');
         }
     };
 
-    if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center bg-background">Loading Inbox...</div>;
-    if (!user) return <div className="min-h-screen flex items-center justify-center bg-background">Please sign in to view your inbox.</div>;
+    if (authLoading || loading) return (
+        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+            <motion.div
+                animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 mb-8"
+            />
+            <div className="w-48 h-4 bg-stone-900 rounded-full animate-pulse" />
+        </div>
+    );
+
+    if (!user) return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white p-4 text-center">
+            <h1 className="text-4xl font-bold tracking-tighter mb-4">Replied</h1>
+            <p className="text-stone-500 max-w-sm mb-8">Please sign in to access your private inbox.</p>
+            <Button onClick={() => window.location.href = '/'} className="bg-white text-black hover:bg-stone-200 px-8">Return Home</Button>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
@@ -150,9 +201,14 @@ export default function InboxPage() {
                                 <motion.div
                                     key={msg.id}
                                     layout
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                                    variants={{
+                                        initial: { opacity: 0, scale: 0.95 },
+                                        animate: { opacity: 1, scale: 1 },
+                                        exit: { opacity: 0, scale: 0.8, x: 20, transition: { duration: 0.3 } }
+                                    }}
+                                    initial="initial"
+                                    animate="animate"
+                                    exit="exit"
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 >
                                     <Card className="border-stone-800 bg-stone-900/20 backdrop-blur shadow-xl hover:bg-stone-900/30 transition-all border-l-4 border-l-stone-700">
@@ -163,7 +219,7 @@ export default function InboxPage() {
                                             </div>
                                             <div className="flex items-start justify-between gap-4">
                                                 <CardTitle className="text-lg leading-relaxed font-medium text-stone-200">
-                                                    "{msg.content}"
+                                                    &quot;{msg.content}&quot;
                                                 </CardTitle>
                                                 <Button
                                                     variant="ghost"

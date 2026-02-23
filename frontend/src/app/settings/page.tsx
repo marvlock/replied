@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 
@@ -30,30 +31,31 @@ export default function SettingsPage() {
     });
 
     useEffect(() => {
+        const fetchProfile = async () => {
+            if (!user) return;
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (data) {
+                setFormData({
+                    display_name: data.display_name || '',
+                    bio: data.bio || '',
+                    username: data.username || '',
+                    avatar_url: data.avatar_url || '',
+                    is_paused: data.is_paused || false,
+                    blocked_phrases: data.blocked_phrases || []
+                });
+            }
+            setLoading(false);
+        };
+
         if (user) {
             fetchProfile();
         }
     }, [user]);
-
-    const fetchProfile = async () => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user?.id)
-            .single();
-
-        if (data) {
-            setFormData({
-                display_name: data.display_name || '',
-                bio: data.bio || '',
-                username: data.username || '',
-                avatar_url: data.avatar_url || '',
-                is_paused: data.is_paused || false,
-                blocked_phrases: data.blocked_phrases || []
-            });
-        }
-        setLoading(false);
-    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -74,7 +76,7 @@ export default function SettingsPage() {
             } else {
                 toast.error('Failed to update profile');
             }
-        } catch (error) {
+        } catch {
             toast.error('Connection error');
         } finally {
             setSaving(false);
@@ -138,9 +140,12 @@ export default function SettingsPage() {
                                         </DialogHeader>
                                         <div className="flex flex-col items-center justify-center p-8 space-y-6">
                                             <div className="p-4 bg-white rounded-2xl">
-                                                <img
+                                                <Image
                                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.host}/${formData.username}` : '')}`}
                                                     alt="QR Code"
+                                                    width={192}
+                                                    height={192}
+                                                    unoptimized
                                                     className="w-48 h-48"
                                                 />
                                             </div>
