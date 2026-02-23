@@ -73,11 +73,25 @@ CREATE POLICY "Users can create replies to their messages" ON public.replies
 -- Functions
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+  base_username TEXT;
+  final_username TEXT;
+  counter INTEGER := 0;
 BEGIN
+  -- Get base username from metadata or email prefix, sanitize it
+  base_username := LOWER(REGEXP_REPLACE(COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)), '[^a-zA-Z0-9]', '', 'g'));
+  final_username := base_username;
+
+  -- Loop until a unique username is found
+  WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = final_username) LOOP
+    counter := counter + 1;
+    final_username := base_username || counter::TEXT;
+  END LOOP;
+
   INSERT INTO public.profiles (id, username, display_name, avatar_url, email)
   VALUES (
     new.id,
-    COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    final_username,
     COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     new.raw_user_meta_data->>'avatar_url',
     new.email

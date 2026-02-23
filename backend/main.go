@@ -56,8 +56,8 @@ func sendEmailNotification(toEmail, username, content string) {
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("Failed to send email: %v", err)
 		return
@@ -158,6 +158,26 @@ func main() {
 			Select("*", "exact", false).
 			Eq("receiver_id", supabaseUser.ID.String()).
 			Eq("status", "pending").
+			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
+			ExecuteTo(&messages)
+
+		if err != nil {
+			log.Printf("Supabase error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, messages)
+	})
+	// History: Get non-pending messages (replied, archived)
+	r.GET("/history", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var messages []interface{}
+		_, err := client.From("messages").
+			Select("*, replies(*)", "exact", false).
+			Eq("receiver_id", supabaseUser.ID.String()).
+			Neq("status", "pending").
 			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
 			ExecuteTo(&messages)
 
@@ -346,6 +366,25 @@ func main() {
 
 		c.JSON(http.StatusOK, gin.H{"status": "reported"})
 	})
+	// Archive Message (Discard)
+	r.POST("/messages/:id/archive", authMiddleware, func(c *gin.Context) {
+		id := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err = client.From("messages").
+			Update(map[string]interface{}{"status": "archived"}, "", "").
+			Eq("id", id).
+			Eq("receiver_id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive message"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "archived"})
+	})
 
 	// Delete Message
 	r.DELETE("/messages/:id", authMiddleware, func(c *gin.Context) {
@@ -458,6 +497,36 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"status": "updated", "profile": updatedProfile})
+	})
+
+	// Delete Profile (Account)
+	r.DELETE("/profile", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		// Delete from auth.users (Admin API) via direct HTTP
+		supabaseURL := os.Getenv("SUPABASE_URL")
+		serviceRoleKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+		url := fmt.Sprintf("%s/auth/v1/admin/users/%s", supabaseURL, supabaseUser.ID.String())
+		req, _ := http.NewRequest("DELETE", url, nil)
+		req.Header.Set("apikey", serviceRoleKey)
+		req.Header.Set("Authorization", "Bearer "+serviceRoleKey)
+
+		httpClient := &http.Client{}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to auth service"})
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 300 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Auth service error: %d", resp.StatusCode)})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 	})
 
 	port := os.Getenv("PORT")

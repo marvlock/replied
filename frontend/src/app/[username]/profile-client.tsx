@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
+import { LoadingScreen } from '@/components/loading-screen';
 
 interface Profile {
     id: string;
@@ -23,10 +24,7 @@ interface Conversation {
     id: string;
     content: string;
     created_at: string;
-    replies: {
-        content: string;
-        created_at: string;
-    }[];
+    replies: any;
 }
 
 export default function PublicProfileClient({ username }: { username: string }) {
@@ -35,6 +33,12 @@ export default function PublicProfileClient({ username }: { username: string }) 
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [minLoading, setMinLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setMinLoading(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         async function fetchData() {
@@ -115,7 +119,7 @@ export default function PublicProfileClient({ username }: { username: string }) 
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-black text-white font-mono uppercase tracking-tighter">Loading...</div>;
+    if (loading || minLoading) return <LoadingScreen />;
     if (!profile) return <div className="min-h-screen flex items-center justify-center text-xl font-bold bg-black text-white">User Not Found</div>;
 
     return (
@@ -146,19 +150,26 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                         className="w-full h-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-700"
                                     />
                                 ) : (
-                                    <span className="text-3xl font-light text-stone-500">{profile.display_name?.[0]}</span>
+                                    <span className="text-3xl font-light text-stone-500">{profile.username[0].toUpperCase()}</span>
                                 )}
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h1 className="text-4xl font-bold tracking-tighter text-white">{profile.display_name || profile.username}</h1>
+                            <div className="space-y-1">
+                                <h1 className="text-4xl font-extrabold tracking-tighter text-stone-100 uppercase">
+                                    {profile.display_name || profile.username}
+                                </h1>
+                                <p className="text-stone-600 font-mono text-[10px] uppercase tracking-[0.4em] font-black">
+                                    @{profile.username}
+                                </p>
+                            </div>
                             {profile.bio && (
-                                <p className="max-w-md mx-auto text-stone-400 leading-relaxed italic text-sm">
+                                <p className="max-w-md mx-auto text-stone-400 leading-relaxed italic text-sm font-serif">
                                     &quot;{profile.bio}&quot;
                                 </p>
                             )}
-                            <p className="text-stone-500 font-mono text-[9px] uppercase tracking-[0.3em]">Curated Conversations</p>
+                            <p className="text-stone-500 font-mono text-[9px] uppercase tracking-[0.3em] opacity-40">Curated Conversations</p>
                         </div>
                     </motion.header>
 
@@ -167,10 +178,10 @@ export default function PublicProfileClient({ username }: { username: string }) 
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.1 }}
                     >
-                        <Card className="border-stone-800/50 bg-stone-900/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden">
-                            <CardContent className="p-6 space-y-4">
+                        <Card className="border-stone-800/50 bg-stone-950/40 backdrop-blur-2xl shadow-2xl overflow-hidden rounded-[32px]">
+                            <CardContent className="p-2 space-y-2">
                                 {profile.is_paused ? (
-                                    <div className="py-8 flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
                                         <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
                                             <Lock className="w-5 h-5 text-red-500" />
                                         </div>
@@ -183,21 +194,25 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                     <>
                                         <Textarea
                                             placeholder="Ask me anything anonymously..."
-                                            className="min-h-[140px] bg-transparent border-none focus-visible:ring-0 text-lg p-0 resize-none text-stone-200 placeholder:text-stone-600 shadow-none focus:ring-0"
+                                            className="min-h-[180px] bg-transparent border-none focus-visible:ring-0 text-xl p-8 resize-none text-stone-200 placeholder:text-stone-800 transition-all duration-300 font-serif"
                                             value={message}
                                             onChange={(e) => setMessage(e.target.value)}
                                             maxLength={500}
                                         />
 
-                                        <div className="flex items-center justify-between pt-4 border-t border-stone-800/50">
-                                            <span className="text-[10px] font-mono text-stone-600 uppercase tracking-widest">
-                                                {message.length}/500
-                                            </span>
+                                        <div className="flex items-center justify-between px-8 pb-6">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-mono text-stone-700 uppercase tracking-widest font-bold">
+                                                    Character Count
+                                                </span>
+                                                <span className="text-xs font-mono text-stone-500">
+                                                    {message.length} / 500
+                                                </span>
+                                            </div>
                                             <Button
                                                 disabled={sending || !message.trim()}
                                                 onClick={handleSubmit}
-                                                size="sm"
-                                                className="bg-stone-100 text-black hover:bg-white rounded-full px-6 font-bold text-xs shadow-xl shadow-white/5 active:scale-95 transition-all"
+                                                className="bg-white text-black hover:bg-stone-200 h-14 px-10 rounded-2xl font-bold text-sm shadow-2xl transition-all active:scale-95 disabled:opacity-20"
                                             >
                                                 {sending ? 'Sending...' : 'Send Message'}
                                             </Button>
@@ -239,22 +254,38 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                     >
                                         <div className="space-y-8">
                                             {/* Question */}
-                                            <div className="max-w-[85%] space-y-2 text-left">
-                                                <span className="text-[9px] font-mono text-stone-600 uppercase tracking-widest">Anonymous Ask</span>
-                                                <div className="p-5 rounded-2xl rounded-tl-none bg-stone-900/30 border border-stone-800/50 text-stone-400 leading-relaxed italic">
+                                            <div className="max-w-[85%] space-y-3 text-left">
+                                                <div className="flex items-center gap-2 px-1">
+                                                    <div className="w-1 h-1 rounded-full bg-stone-500" />
+                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">Anonymous Ask</span>
+                                                </div>
+                                                <div className="p-6 rounded-[28px] rounded-tl-none bg-white/[0.02] border border-white/5 text-stone-300 leading-relaxed italic font-serif text-lg shadow-inner">
                                                     &quot;{pair.content}&quot;
                                                 </div>
                                             </div>
 
                                             {/* Response */}
-                                            {pair.replies?.[0] && (
-                                                <div className="ml-auto max-w-[85%] space-y-2 text-right">
-                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest">{profile.display_name || profile.username}&apos;s Reply</span>
-                                                    <div className="p-6 rounded-3xl rounded-br-none bg-gradient-to-br from-stone-800/40 to-black border border-white/5 text-white leading-relaxed shadow-2xl">
-                                                        {pair.replies[0].content}
+                                            {(() => {
+                                                const reply = Array.isArray(pair.replies) ? pair.replies[0] : pair.replies;
+                                                if (!reply || !reply.content) return null;
+
+                                                return (
+                                                    <div className="ml-auto max-w-[92%] space-y-3 text-right">
+                                                        <div className="flex items-center justify-end gap-2 px-1">
+                                                            <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">Official Response</span>
+                                                            <div className="h-px w-4 bg-stone-800" />
+                                                            <span className="text-[9px] font-mono text-white uppercase tracking-widest font-black">@{profile.username}</span>
+                                                        </div>
+                                                        <div className="p-8 rounded-[32px] rounded-br-none bg-gradient-to-br from-stone-800 via-stone-900 to-black text-white leading-relaxed shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif text-lg border border-white/5 relative overflow-hidden group">
+                                                            {/* Subtle inner glow */}
+                                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
+                                                            <div className="relative z-10">
+                                                                {reply.content}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
                                         </div>
                                     </motion.div>
                                 ))

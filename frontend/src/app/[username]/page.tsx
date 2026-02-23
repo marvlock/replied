@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!profile) return { title: 'User Not Found | Replied' };
 
-    const title = `Message ${profile.display_name || username} | Replied`;
+    const title = `Message @${username} | Replied`;
     const description = profile.bio || `Send me an anonymous message and I'll publish my favorite responses.`;
 
     return {

@@ -3,27 +3,78 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { LoadingScreen } from '@/components/loading-screen';
 
 export default function AuthCallback() {
     const router = useRouter();
 
     useEffect(() => {
         const handleCallback = async () => {
-            const { error } = await supabase.auth.getSession();
+            // Check URL for errors first
+            const params = new URLSearchParams(window.location.search);
+            const error = params.get('error');
+            const errorDescription = params.get('error_description');
+
             if (error) {
-                console.error('Error in auth callback:', error.message);
-                router.push('/login?error=auth-failed');
+                console.error('Auth error from URL:', error, errorDescription);
+                toast.error(errorDescription || 'Authentication failed');
+                router.push('/');
+                return;
+            }
+
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                console.error('Session error:', sessionError.message);
+                router.push('/?error=auth-failed');
+                return;
+            }
+
+            if (session) {
+                await processProfile(session.user.id);
             } else {
-                router.push('/inbox');
+                let sessionFound = false;
+
+                // Wait for the session to be established
+                const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (event === 'SIGNED_IN' && session) {
+                        sessionFound = true;
+                        await processProfile(session.user.id);
+                        subscription.unsubscribe();
+                    }
+                });
+
+                // Fail after 4 seconds if still no session
+                setTimeout(() => {
+                    subscription.unsubscribe();
+                    if (!sessionFound) {
+                        router.push('/?error=timeout');
+                    }
+                }, 4000);
+            }
+        };
+
+        const processProfile = async (userId: string) => {
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', userId)
+                    .single();
+
+                if (!error && profile?.username) {
+                    router.push('/inbox');
+                } else {
+                    router.push('/setup');
+                }
+            } catch {
+                router.push('/setup');
             }
         };
 
         handleCallback();
     }, [router]);
 
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-        </div>
-    );
+    return <LoadingScreen />;
 }

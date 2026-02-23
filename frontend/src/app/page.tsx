@@ -5,127 +5,194 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { MessageSquare, ArrowRight, Shield, Globe } from 'lucide-react';
+import { MessageSquare, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Home() {
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { user, hasUsername, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (user && !loading) {
-      router.push('/inbox');
+    if (user && !loading && hasUsername !== null) {
+      if (hasUsername) {
+        router.push('/inbox');
+      } else {
+        router.push('/setup');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, hasUsername, router]);
+
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-primary/30 overflow-hidden">
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-stone-900/40 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />
+    <div className="min-h-screen text-white selection:bg-white/30 overflow-x-hidden pt-20 transition-colors duration-500">
+      {/* Background Layer */}
+      <div className="fixed inset-0 -z-20 bg-black" />
+
+      {/* Hero Fullscreen Background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <Image
+          src="/paint.jpeg"
+          alt="Background"
+          fill
+          priority
+          className="object-cover object-center transition-opacity duration-1000 scale-105"
+        />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black" />
       </div>
 
-      <nav className="relative z-10 flex items-center justify-between px-6 py-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-black" />
-          </div>
-          <span className="font-bold tracking-tighter text-xl">Replied</span>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-xl border-b border-white/5 bg-black/40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="w-9 h-9 bg-white text-black rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <MessageSquare className="w-5 h-5 fill-current" />
+            </div>
+            <span className="font-extrabold tracking-tighter text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-stone-400">Replied</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <Button
+              variant="ghost"
+              onClick={signInWithGoogle}
+              className="text-stone-400 hover:text-white hover:bg-white/5 rounded-xl px-6 font-medium transition-all"
+            >
+              Log in
+            </Button>
+          </motion.div>
         </div>
-        <Button
-          variant="ghost"
-          onClick={signInWithGoogle}
-          className="text-stone-400 hover:text-white hover:bg-stone-900 rounded-full px-6"
-        >
-          Sign In
-        </Button>
       </nav>
 
-      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-20 pb-32 flex flex-col items-center text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-8"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900/50 border border-stone-800 text-stone-400 text-[10px] uppercase tracking-[0.2em] mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/40 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </span>
-            Private Inbox • Public Record
-          </div>
+      <main className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col items-center">
+        {/* Hero Section */}
+        <div className="pt-24 pb-32 text-center relative max-w-4xl w-full">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-7xl md:text-[11rem] font-bold tracking-tighter leading-[0.8] mb-12 drop-shadow-2xl"
+          >
+            Curated <br />
+            <span className="text-stone-300 italic font-serif opacity-90">Silence</span>
+          </motion.h1>
 
-          <h1 className="text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-white to-stone-500">
-            You are what you <br /> choose to respond to.
-          </h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="max-w-2xl mx-auto text-xl md:text-2xl text-stone-200 leading-relaxed font-serif italic mb-16 drop-shadow-lg"
+          >
+            The anonymous sanctuary for professional curation. <br />
+            Share your link, receive honest messages, and publish the responses that define you.
+          </motion.p>
 
-          <p className="max-w-2xl mx-auto text-xl text-stone-400 leading-relaxed font-light">
-            An anonymous messaging platform where your public profile is a living, curated record
-            of the conversations you found worth having.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-6"
+          >
             <Button
               size="lg"
               onClick={signInWithGoogle}
-              className="bg-white text-black hover:bg-stone-200 h-14 px-10 rounded-full font-bold text-lg shadow-2xl shadow-white/10 active:scale-95 transition-all"
+              className="group relative overflow-hidden bg-white text-black hover:bg-stone-200 h-16 px-10 rounded-2xl font-bold text-xl shadow-[0_0_40px_-5px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-5px_rgba(255,255,255,0.4)] transition-all active:scale-95 text-center flex items-center justify-center"
             >
               Get Your Link
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
+          </motion.div>
+        </div>
+
+        {/* Visual Proof / Mockup */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="w-full max-w-4xl mt-12 mb-40 relative group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10 pointer-events-none" />
+          <div className="bg-white/[0.03] border border-white/10 rounded-[3rem] p-4 md:p-16 backdrop-blur-md overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+            <div className="flex flex-col gap-10 scale-95 md:scale-100 origin-top">
+              {/* Question */}
+              <div className="max-w-[85%] p-8 rounded-3xl rounded-tl-none bg-black/60 border border-white/5 text-stone-200 font-serif italic text-xl md:text-2xl shadow-2xl leading-relaxed">
+                "What's the one thing you've learned about leadership that no one tells you?"
+              </div>
+              {/* Reply */}
+              <div className="max-w-[85%] self-end p-10 rounded-[2.5rem] rounded-br-none bg-white text-black leading-relaxed shadow-[0_20px_60px_rgba(255,255,255,0.1)]">
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] mb-4 opacity-50">Response_01</p>
+                <div className="text-xl md:text-2xl font-serif italic tracking-tight">
+                  "True leadership isn't about having the answers. It's about being the person people trust enough to admit they don't have them either."
+                </div>
+              </div>
+            </div>
           </div>
+          {/* Decorative Elements */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 blur-[80px] rounded-full group-hover:bg-white/10 transition-colors duration-700" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-stone-500/10 blur-[80px] rounded-full" />
         </motion.div>
 
-        {/* Feature Grid */}
-        <section className="grid md:grid-cols-3 gap-8 mt-40 text-left">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="p-8 rounded-3xl bg-stone-900/20 border border-stone-800/50 space-y-4"
-          >
-            <Shield className="w-8 h-8 text-stone-500" />
-            <h3 className="text-xl font-bold tracking-tight">Private Inbox</h3>
-            <p className="text-stone-500 leading-relaxed">
-              Anonymous messages land in your private inbox. Nothing is public until you decide.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="p-8 rounded-3xl bg-stone-900/20 border border-stone-800/50 space-y-4 shadow-2xl shadow-primary/5"
-          >
-            <MessageSquare className="w-8 h-8 text-white" />
-            <h3 className="text-xl font-bold tracking-tight">Curated Feed</h3>
-            <p className="text-stone-500 leading-relaxed">
-              Every reply publishes the pair to your profile. Reveal your values through engagement.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="p-8 rounded-3xl bg-stone-900/20 border border-stone-800/50 space-y-4"
-          >
-            <Globe className="w-8 h-8 text-stone-500" />
-            <h3 className="text-xl font-bold tracking-tight">No Accounts Needed</h3>
-            <p className="text-stone-500 leading-relaxed">
-              Anyone can visit your link and send a message. Zero friction for your audience.
-            </p>
-          </motion.div>
-        </section>
+        {/* Feature Section */}
+        <div className="w-full grid md:grid-cols-3 gap-12 pb-40 border-t border-stone-900 pt-20">
+          {[
+            {
+              title: "Private by Default",
+              desc: "Every message lands in a encrypted sanctuary. No one sees anything until you decide it's worth the record."
+            },
+            {
+              title: "Public by Choice",
+              desc: "Only your replies become public. Curate a profile that reveals your values and best responses."
+            },
+            {
+              title: "Just a Link",
+              desc: "Zero friction for your audience—no apps, no accounts. Just your unique handle in your social bio."
+            }
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="space-y-6 p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover:bg-white/[0.04] transition-colors group/card"
+            >
+              <div className="h-px w-10 bg-white/20 group-hover/card:w-20 transition-all duration-500" />
+              <h3 className="text-2xl font-serif italic tracking-tight text-white">{feature.title}</h3>
+              <p className="text-stone-300 leading-relaxed text-base font-light opacity-80">{feature.desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </main>
 
-      <footer className="relative z-10 border-t border-stone-900 mt-20 py-12 text-center">
-        <p className="text-stone-600 text-sm font-mono uppercase tracking-widest">
-          The future of social is curated.
-        </p>
+      <footer className="w-full py-20 bg-stone-950 border-t border-stone-900 mt-20 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center">
+          <div className="flex items-center gap-2.5 mb-8 opacity-50 grayscale hover:grayscale-0 transition-all cursor-pointer">
+            <div className="w-7 h-7 bg-white text-black rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 fill-current" />
+            </div>
+            <span className="font-bold tracking-tighter text-lg">Replied</span>
+          </div>
+          <p className="text-stone-600 text-[10px] font-mono uppercase tracking-[0.4em] mb-4">
+            Forging connections through curation
+          </p>
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex gap-8 text-stone-600 text-[10px] font-mono uppercase tracking-[0.2em]">
+              <a href="https://github.com/marvlock/replied" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub (Open Source)</a>
+              <a href="https://www.marvlock.dev/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">By Marvlock</a>
+            </div>
+            <p className="text-stone-800 text-[9px] font-mono uppercase tracking-[0.5em]">
+              © {new Date().getFullYear()} REPLIED
+            </p>
+          </div>
+        </div>
+        {/* Abstract pattern floor */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-800 to-transparent shadow-[0_0_100px_rgba(255,255,255,0.05)]" />
       </footer>
     </div>
   );

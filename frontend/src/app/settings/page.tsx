@@ -9,17 +9,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X } from 'lucide-react';
+import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X, AlertTriangle, Twitter, Instagram, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { useRouter } from 'next/navigation';
+import { LoadingScreen } from '@/components/loading-screen';
 
 export default function SettingsPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, hasUsername, loading: authLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/');
+            return;
+        }
+        if (!authLoading && user && hasUsername === false) {
+            router.push('/setup');
+            return;
+        }
+    }, [user, authLoading, hasUsername, router]);
+
     const [loading, setLoading] = useState(true);
+    const [minLoading, setMinLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setMinLoading(false), 2000);
+        return () => clearTimeout(timer);
+    }, []);
+    const [deleting, setDeleting] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         display_name: '',
@@ -83,6 +106,34 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        setIsDeleteDialogOpen(false);
+
+        setDeleting(true);
+        const { data: { session } } = await supabase.auth.getSession();
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`
+                }
+            });
+
+            if (response.ok) {
+                toast.success('Account deleted. Goodbye!');
+                await supabase.auth.signOut();
+                window.location.href = '/';
+            } else {
+                toast.error('Failed to delete account');
+            }
+        } catch {
+            toast.error('Connection error');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const copyLink = () => {
         const link = `${window.location.origin}/${formData.username}`;
         navigator.clipboard.writeText(link);
@@ -91,7 +142,7 @@ export default function SettingsPage() {
         setTimeout(() => setHasCopied(false), 2000);
     };
 
-    if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center bg-black text-white">Loading...</div>;
+    if (authLoading || loading || minLoading) return <LoadingScreen />;
 
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
@@ -156,6 +207,39 @@ export default function SettingsPage() {
                                     </DialogContent>
                                 </Dialog>
                             </div>
+
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const link = `${window.location.origin}/${formData.username}`;
+                                        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝`)}&url=${encodeURIComponent(link)}`, '_blank');
+                                    }}
+                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
+                                >
+                                    <Twitter className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Share on X</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const link = `${window.location.origin}/${formData.username}`;
+                                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝 ${link}`)}`, '_blank');
+                                    }}
+                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">WhatsApp</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={copyLink}
+                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
+                                >
+                                    <Instagram className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">IG Story</span>
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </motion.div>
@@ -216,7 +300,7 @@ export default function SettingsPage() {
                                             {phrase}
                                             <button
                                                 onClick={() => setFormData({ ...formData, blocked_phrases: formData.blocked_phrases.filter(p => p !== phrase) })}
-                                                className="hover:text-white"
+                                                className="hover:text-white cursor-pointer"
                                             >
                                                 <X className="w-3 h-3" />
                                             </button>
@@ -240,6 +324,17 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
+                                <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Username Handle</label>
+                                <Input
+                                    value={formData.username}
+                                    readOnly
+                                    className="bg-stone-900 border-stone-800 text-stone-500 h-12 rounded-xl cursor-not-allowed"
+                                    placeholder="yourhandle"
+                                />
+                                <p className="text-[10px] text-stone-600 font-mono">This is your unique link identifier and cannot be changed.</p>
+                            </div>
+
+                            <div className="space-y-2">
                                 <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Display Name</label>
                                 <Input
                                     value={formData.display_name}
@@ -254,7 +349,7 @@ export default function SettingsPage() {
                                 <Textarea
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                    className="bg-stone-950 border-stone-800 focus:border-stone-600 min-h-[120px] rounded-xl resize-none"
+                                    className="bg-stone-950 border-stone-800 focus:border-stone-600 min-h-[120px] rounded-xl resize-none font-serif"
                                     placeholder="Tell people what kind of messages you're looking for..."
                                 />
                             </div>
@@ -266,6 +361,61 @@ export default function SettingsPage() {
                             >
                                 {saving ? 'Saving changes...' : 'Save Profile'}
                             </Button>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Danger Zone */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                    <Card className="bg-stone-900/30 border-red-900/20 shadow-2xl shadow-red-900/5">
+                        <CardHeader>
+                            <div className="flex items-center gap-2 text-red-500 mb-2">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-red-500/80">Danger Zone</span>
+                            </div>
+                            <CardTitle className="text-red-500">Delete Account</CardTitle>
+                            <CardDescription className="text-red-900/60 uppercase text-[9px] font-mono tracking-widest mt-1">Irreversible Action</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={deleting}
+                                        className="w-full bg-red-600 hover:bg-red-700 text-white border-none h-12 rounded-xl font-bold transition-all shadow-xl shadow-red-900/20"
+                                    >
+                                        Permanently Delete Account
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-stone-950 border-stone-800 text-white max-md">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-red-500 flex items-center gap-2">
+                                            <AlertTriangle className="w-5 h-5" />
+                                            Critical Action
+                                        </DialogTitle>
+                                        <DialogDescription className="text-stone-400 pt-2">
+                                            This will permanently delete your account, your profile, and all received messages. This action **cannot be undone**.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter className="mt-4 gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setIsDeleteDialogOpen(false)}
+                                            className="text-stone-400 hover:text-white hover:bg-white/5"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleDeleteAccount}
+                                            disabled={deleting}
+                                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                                        >
+                                            {deleting ? 'Deleting...' : 'Yes, Delete Everything'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </CardContent>
                     </Card>
                 </motion.div>
