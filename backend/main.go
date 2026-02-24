@@ -682,6 +682,195 @@ func main() {
 		c.JSON(http.StatusOK, profile)
 	})
 
+	// Search Users
+	r.GET("/users/search", authMiddleware, func(c *gin.Context) {
+		query := c.Query("q")
+		if len(query) < 2 {
+			c.JSON(http.StatusOK, []interface{}{})
+			return
+		}
+
+		var users []interface{}
+		_, err := client.From("profiles").
+			Select("id, username, display_name, avatar_url", "", false).
+			Ilike("username", "%"+query+"%").
+			Limit(10, "").
+			ExecuteTo(&users)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Search failed"})
+			return
+		}
+		c.JSON(http.StatusOK, users)
+	})
+
+	// Send Friend Request
+	r.POST("/friends/request", authMiddleware, func(c *gin.Context) {
+		var body struct {
+			ReceiverID string `json:"receiver_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+			return
+		}
+
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		if body.ReceiverID == supabaseUser.ID.String() {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot add yourself"})
+			return
+		}
+
+		// Check if already friends or request pending
+		var existing []interface{}
+		_, err := client.From("friendships").
+			Select("*", "", false).
+			Or(fmt.Sprintf("and(sender_id.eq.%s,receiver_id.eq.%s),and(sender_id.eq.%s,receiver_id.eq.%s)",
+				supabaseUser.ID.String(), body.ReceiverID, body.ReceiverID, supabaseUser.ID.String()), "").
+			ExecuteTo(&existing)
+
+		if len(existing) > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Request already exists or already friends"})
+			return
+		}
+
+		_, _, err = client.From("friendships").
+			Insert(map[string]interface{}{
+				"sender_id":   supabaseUser.ID.String(),
+				"receiver_id": body.ReceiverID,
+				"status":      "pending",
+			}, false, "", "", "").
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send request"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "request_sent"})
+	})
+
+	// Get Friend Requests
+	r.GET("/friends/requests", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var requests []interface{}
+		_, err := client.From("friendships").
+			Select("*, profiles!sender_id(username, display_name, avatar_url)", "", false).
+			Eq("receiver_id", supabaseUser.ID.String()).
+			Eq("status", "pending").
+			ExecuteTo(&requests)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch requests"})
+			return
+		}
+		c.JSON(http.StatusOK, requests)
+	})
+
+	// Accept Friend Request
+	r.POST("/friends/accept", authMiddleware, func(c *gin.Context) {
+		var body struct {
+			RequestID string `json:"request_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+			return
+		}
+
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err := client.From("friendships").
+			Update(map[string]interface{}{"status": "accepted"}, "", "").
+			Eq("id", body.RequestID).
+			Eq("receiver_id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to accept request"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "accepted"})
+	})
+
+	// Friends Feed: Get public conversations from friends
+	r.GET("/friends/feed", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		// 1. Get friend IDs
+		var friendships []map[string]interface{}
+		_, err := client.From("friendships").
+			Select("sender_id, receiver_id", "", false).
+			Eq("status", "accepted").
+			Or(fmt.Sprintf("sender_id.eq.%s,receiver_id.eq.%s", supabaseUser.ID.String(), supabaseUser.ID.String()), "").
+			ExecuteTo(&friendships)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch friendships"})
+			return
+		}
+
+		friendIDs := make([]string, 0)
+		for _, f := range friendships {
+			sID := f["sender_id"].(string)
+			rID := f["receiver_id"].(string)
+			if sID != supabaseUser.ID.String() {
+				friendIDs = append(friendIDs, sID)
+			} else if rID != supabaseUser.ID.String() {
+				friendIDs = append(friendIDs, rID)
+			}
+		}
+
+		if len(friendIDs) == 0 {
+			c.JSON(http.StatusOK, []interface{}{})
+			return
+		}
+
+		// 2. Fetch public messages for those friends
+		var messages []interface{}
+		_, err = client.From("messages").
+			Select("*, profiles!receiver_id(username, display_name, avatar_url), replies(*)", "exact", false).
+			In("receiver_id", friendIDs).
+			Eq("status", "replied").
+			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
+			Limit(30, "").
+			ExecuteTo(&messages)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch feed"})
+			return
+		}
+
+		// Decrypt everything
+		for i, m := range messages {
+			msgMap := m.(map[string]interface{})
+			if content, ok := msgMap["content"].(string); ok {
+				if dec, err := decrypt(content); err == nil {
+					msgMap["content"] = dec
+				}
+			}
+			if replies, ok := msgMap["replies"].([]interface{}); ok {
+				for j, r := range replies {
+					replyMap := r.(map[string]interface{})
+					if rContent, ok := replyMap["content"].(string); ok {
+						if dec, err := decrypt(rContent); err == nil {
+							replyMap["content"] = dec
+						}
+					}
+					replies[j] = replyMap
+				}
+			}
+			messages[i] = msgMap
+		}
+
+		c.JSON(http.StatusOK, messages)
+	})
+
 	// Update Profile: Set bio, display name, etc. (Can be used for setup)
 	r.PUT("/profile", authMiddleware, func(c *gin.Context) {
 		var body struct {

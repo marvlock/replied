@@ -30,3 +30,11 @@ export const replies = pgTable("replies", {
     content: text("content").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const friendships = pgTable("friendships", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    senderId: uuid("sender_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
+    receiverId: uuid("receiver_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
+    status: text("status", { enum: ["pending", "accepted"] }).default("pending").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});

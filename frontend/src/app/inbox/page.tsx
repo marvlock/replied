@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle } from 'lucide-react';
+import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -257,6 +257,12 @@ export default function InboxPage() {
                         </Tabs>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Link href="/friends" className="flex-1">
+                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
+                                    <Users className="w-4 h-4 mr-2" />
+                                    Friends
+                                </Button>
+                            </Link>
                             <Link href="/settings" className="flex-1">
                                 <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
                                     <Settings className="w-4 h-4 mr-2" />
