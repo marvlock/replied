@@ -135,8 +135,8 @@ export default function SettingsPage() {
 
         try {
             const fileExt = file.name.split('.').pop();
-            const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
+            const fileName = `${Date.now()}.${fileExt}`;
+            const filePath = `${session.user.id}/${fileName}`;
 
             // 1. Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
