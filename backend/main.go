@@ -103,6 +103,52 @@ func decrypt(ciphertextHex string) (string, error) {
 	return string(plaintext), nil
 }
 
+func decryptMessageMap(m interface{}) interface{} {
+	if m == nil {
+		return nil
+	}
+
+	// Handle slices (e.g., joined messages or arrays of messages)
+	if slice, ok := m.([]interface{}); ok {
+		for i, item := range slice {
+			slice[i] = decryptMessageMap(item)
+		}
+		return slice
+	}
+
+	// Handle maps (message objects)
+	msgMap, ok := m.(map[string]interface{})
+	if !ok {
+		return m
+	}
+
+	// Decrypt message content
+	if content, ok := msgMap["content"].(string); ok && len(content) > 32 {
+		// Only try to decrypt if it looks like a hex-encoded GCM block (at least nonce + tag)
+		if dec, err := decrypt(content); err == nil {
+			msgMap["content"] = dec
+		} else {
+			// If it fails, we keep the original content but log the error
+			// Avoid logging the full content for privacy, just the error and length
+			if !strings.Contains(content, " ") && len(content)%2 == 0 {
+				log.Printf("DECRYPTION_FAIL: %v (len: %d)", err, len(content))
+			}
+		}
+	}
+
+	// Decrypt replies recursively
+	if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
+		msgMap["replies"] = decryptMessageMap(repliesVal)
+	}
+
+	// Also check if there's a nested 'message' object (common in bookmarks/likes)
+	if nestedMsg, ok := msgMap["message"]; ok && nestedMsg != nil {
+		msgMap["message"] = decryptMessageMap(nestedMsg)
+	}
+
+	return msgMap
+}
+
 func sendEmailNotification(toEmail, username, content string) {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
@@ -245,13 +291,7 @@ func main() {
 
 		// Decrypt messages
 		for i, m := range messages {
-			msgMap := m.(map[string]interface{})
-			if content, ok := msgMap["content"].(string); ok {
-				if dec, err := decrypt(content); err == nil {
-					msgMap["content"] = dec
-				}
-			}
-			messages[i] = msgMap
+			messages[i] = decryptMessageMap(m)
 		}
 
 		c.JSON(http.StatusOK, messages)
@@ -277,25 +317,7 @@ func main() {
 
 		// Decrypt messages and their replies
 		for i, m := range messages {
-			msgMap := m.(map[string]interface{})
-			if content, ok := msgMap["content"].(string); ok {
-				if dec, err := decrypt(content); err == nil {
-					msgMap["content"] = dec
-				}
-			}
-
-			if replies, ok := msgMap["replies"].([]interface{}); ok {
-				for j, r := range replies {
-					replyMap := r.(map[string]interface{})
-					if rContent, ok := replyMap["content"].(string); ok {
-						if dec, err := decrypt(rContent); err == nil {
-							replyMap["content"] = dec
-						}
-					}
-					replies[j] = replyMap
-				}
-			}
-			messages[i] = msgMap
+			messages[i] = decryptMessageMap(m)
 		}
 
 		c.JSON(http.StatusOK, messages)
@@ -582,39 +604,9 @@ func main() {
 
 		// Decrypt public conversations
 		for i, m := range messages {
-			msgMap := m.(map[string]interface{})
-			if content, ok := msgMap["content"].(string); ok {
-				if dec, err := decrypt(content); err == nil {
-					msgMap["content"] = dec
-				}
-			}
+			messages[i] = decryptMessageMap(m)
+			msgMap := messages[i].(map[string]interface{})
 
-			if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
-				if repliesList, ok := repliesVal.([]interface{}); ok {
-					for j, r := range repliesList {
-						if rMap, ok := r.(map[string]interface{}); ok {
-							if rContent, ok := rMap["content"].(string); ok {
-								if dec, err := decrypt(rContent); err == nil {
-									rMap["content"] = dec
-								} else {
-									log.Printf("Failed to decrypt reply content: %v", err)
-								}
-							}
-							repliesList[j] = rMap
-						}
-					}
-					msgMap["replies"] = repliesList
-				} else if rMap, ok := repliesVal.(map[string]interface{}); ok {
-					if rContent, ok := rMap["content"].(string); ok {
-						if dec, err := decrypt(rContent); err == nil {
-							rMap["content"] = dec
-						} else {
-							log.Printf("Failed to decrypt single reply content: %v", err)
-						}
-					}
-					msgMap["replies"] = rMap
-				}
-			}
 			msgMap["is_liked"] = userLikes[msgMap["id"].(string)]
 			msgMap["is_bookmarked"] = userBookmarks[msgMap["id"].(string)]
 
@@ -769,28 +761,7 @@ func main() {
 		messages := make([]interface{}, 0)
 		for _, b := range bookmarkData {
 			if b.Message != nil {
-				msgMap := b.Message.(map[string]interface{})
-				// Decrypt message content
-				if content, ok := msgMap["content"].(string); ok {
-					if dec, err := decrypt(content); err == nil {
-						msgMap["content"] = dec
-					}
-				}
-				// Decrypt replies
-				if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
-					if replies, ok := repliesVal.([]interface{}); ok {
-						for j, r := range replies {
-							replyMap := r.(map[string]interface{})
-							if rContent, ok := replyMap["content"].(string); ok {
-								if dec, err := decrypt(rContent); err == nil {
-									replyMap["content"] = dec
-								}
-							}
-							replies[j] = replyMap
-						}
-					}
-				}
-				messages = append(messages, msgMap)
+				messages = append(messages, decryptMessageMap(b.Message))
 			}
 		}
 
@@ -821,28 +792,7 @@ func main() {
 		messages := make([]interface{}, 0)
 		for _, l := range likedData {
 			if l.Message != nil {
-				msgMap := l.Message.(map[string]interface{})
-				// Decrypt message content
-				if content, ok := msgMap["content"].(string); ok {
-					if dec, err := decrypt(content); err == nil {
-						msgMap["content"] = dec
-					}
-				}
-				// Decrypt replies
-				if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
-					if replies, ok := repliesVal.([]interface{}); ok {
-						for j, r := range replies {
-							replyMap := r.(map[string]interface{})
-							if rContent, ok := replyMap["content"].(string); ok {
-								if dec, err := decrypt(rContent); err == nil {
-									replyMap["content"] = dec
-								}
-							}
-							replies[j] = replyMap
-						}
-					}
-				}
-				messages = append(messages, msgMap)
+				messages = append(messages, decryptMessageMap(l.Message))
 			}
 		}
 
@@ -1133,24 +1083,7 @@ func main() {
 
 		// Decrypt everything
 		for i, m := range messages {
-			msgMap := m.(map[string]interface{})
-			if content, ok := msgMap["content"].(string); ok {
-				if dec, err := decrypt(content); err == nil {
-					msgMap["content"] = dec
-				}
-			}
-			if replies, ok := msgMap["replies"].([]interface{}); ok {
-				for j, r := range replies {
-					replyMap := r.(map[string]interface{})
-					if rContent, ok := replyMap["content"].(string); ok {
-						if dec, err := decrypt(rContent); err == nil {
-							replyMap["content"] = dec
-						}
-					}
-					replies[j] = replyMap
-				}
-			}
-			messages[i] = msgMap
+			messages[i] = decryptMessageMap(m)
 		}
 
 		c.JSON(http.StatusOK, messages)
