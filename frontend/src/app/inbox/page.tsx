@@ -301,67 +301,59 @@ export default function InboxPage() {
     return (
         <div className="min-h-screen bg-black p-4 md:p-8">
             <div className="max-w-4xl mx-auto">
-                <header className="flex flex-col items-center md:flex-row md:items-center justify-between mb-12 gap-6 text-center md:text-left">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-white">
-                            {view === 'inbox' ? 'Your Inbox' : view === 'history' ? 'The Ledger' : view === 'feed' ? 'The Pulse' : view === 'bookmarks' ? 'Bookmarks' : 'Liked'}
-                        </h1>
-                        <p className="text-stone-400 mt-1 font-serif italic text-sm">
-                            {view === 'inbox'
-                                ? `Found ${messages.length} messages waiting`
-                                : view === 'history'
-                                    ? `Reviewing ${historyMessages.length} conversations`
-                                    : view === 'feed'
-                                        ? `Seeing ${feedMessages.length} updates from friends`
-                                        : view === 'bookmarks'
-                                            ? `You have ${bookmarkMessages.length} saved insights`
-                                            : `You've hearted ${likedMessages.length} moments`}
-                        </p>
-                    </div>
-                    <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 w-full md:w-auto">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes')} className="bg-white/5 p-1 rounded-xl w-full sm:w-[540px]">
-                            <TabsList className="bg-transparent border-none w-full grid grid-cols-5">
-                                <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
-                                    <InboxIcon className="w-3.5 h-3.5" />
-                                    Inbox
-                                </TabsTrigger>
-                                <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
-                                    <History className="w-3.5 h-3.5" />
-                                    Ledger
-                                </TabsTrigger>
-                                <TabsTrigger value="feed" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
-                                    <Activity className="w-3.5 h-3.5" />
-                                    Feed
-                                </TabsTrigger>
-                                <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
-                                    <Bookmark className="w-3.5 h-3.5" />
-                                    Saved
-                                </TabsTrigger>
-                                <TabsTrigger value="likes" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
-                                    <Heart className="w-3.5 h-3.5" />
-                                    Liked
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <Link href="/friends" className="flex-1">
-                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
+                <header className="mb-16 space-y-8">
+                    <div className="flex items-center justify-between px-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                                <MessageSquareQuote className="w-5 h-5 text-black" />
+                            </div>
+                            <span className="text-xl font-black tracking-tighter text-white uppercase italic">Replied</span>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2">
+                            <Link href="/friends">
+                                <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
                                     <Users className="w-4 h-4 mr-2" />
                                     Friends
                                 </Button>
                             </Link>
-                            <Link href="/settings" className="flex-1">
-                                <Button variant="ghost" size="sm" className="w-full text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
+                            <Link href="/settings">
+                                <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
                                     <Settings className="w-4 h-4 mr-2" />
                                     Settings
                                 </Button>
                             </Link>
-                            <Button variant="ghost" size="sm" onClick={signOut} className="flex-1 text-stone-500 hover:text-white border border-stone-800 md:border-none rounded-xl">
+                            <Button variant="ghost" size="sm" onClick={signOut} className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
                                 <LogOut className="w-4 h-4 mr-2" />
                                 Sign Out
                             </Button>
                         </div>
+                    </div>
+
+                    <div className="flex justify-center px-4">
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes')} className="bg-stone-900/50 p-1.5 rounded-[22px] w-full max-w-[640px] border border-white/5 backdrop-blur-md">
+                            <TabsList className="bg-transparent border-none w-full grid grid-cols-5 h-11">
+                                <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <InboxIcon className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Inbox</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <History className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Ledger</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="feed" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <Activity className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Feed</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <Bookmark className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Saved</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="likes" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <Heart className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-bold uppercase tracking-wider">Liked</span>
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
                     </div>
                 </header>
 
