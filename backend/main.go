@@ -743,7 +743,110 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove bookmark"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "bookmark_removed"})
+	})
+
+	// Get user's bookmarked messages
+	r.GET("/bookmarks", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var bookmarkData []struct {
+			MessageID string      `json:"message_id"`
+			Message   interface{} `json:"message"`
+		}
+
+		_, err := client.From("bookmarks").
+			Select("message_id, message:messages(*, profiles:receiver_id(username, avatar_url), replies(*))", "exact", false).
+			Eq("user_id", supabaseUser.ID.String()).
+			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
+			ExecuteTo(&bookmarkData)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookmarks: " + err.Error()})
+			return
+		}
+
+		messages := make([]interface{}, 0)
+		for _, b := range bookmarkData {
+			if b.Message != nil {
+				msgMap := b.Message.(map[string]interface{})
+				// Decrypt message content
+				if content, ok := msgMap["content"].(string); ok {
+					if dec, err := decrypt(content); err == nil {
+						msgMap["content"] = dec
+					}
+				}
+				// Decrypt replies
+				if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
+					if replies, ok := repliesVal.([]interface{}); ok {
+						for j, r := range replies {
+							replyMap := r.(map[string]interface{})
+							if rContent, ok := replyMap["content"].(string); ok {
+								if dec, err := decrypt(rContent); err == nil {
+									replyMap["content"] = dec
+								}
+							}
+							replies[j] = replyMap
+						}
+					}
+				}
+				messages = append(messages, msgMap)
+			}
+		}
+
+		c.JSON(http.StatusOK, messages)
+	})
+
+	// Get user's liked messages
+	r.GET("/likes", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var likedData []struct {
+			MessageID string      `json:"message_id"`
+			Message   interface{} `json:"message"`
+		}
+
+		_, err := client.From("likes").
+			Select("message_id, message:messages(*, profiles:receiver_id(username, avatar_url), replies(*))", "exact", false).
+			Eq("user_id", supabaseUser.ID.String()).
+			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
+			ExecuteTo(&likedData)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch liked messages: " + err.Error()})
+			return
+		}
+
+		messages := make([]interface{}, 0)
+		for _, l := range likedData {
+			if l.Message != nil {
+				msgMap := l.Message.(map[string]interface{})
+				// Decrypt message content
+				if content, ok := msgMap["content"].(string); ok {
+					if dec, err := decrypt(content); err == nil {
+						msgMap["content"] = dec
+					}
+				}
+				// Decrypt replies
+				if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
+					if replies, ok := repliesVal.([]interface{}); ok {
+						for j, r := range replies {
+							replyMap := r.(map[string]interface{})
+							if rContent, ok := replyMap["content"].(string); ok {
+								if dec, err := decrypt(rContent); err == nil {
+									replyMap["content"] = dec
+								}
+							}
+							replies[j] = replyMap
+						}
+					}
+				}
+				messages = append(messages, msgMap)
+			}
+		}
+
+		c.JSON(http.StatusOK, messages)
 	})
 	// Archive Message (Discard)
 	r.POST("/messages/:id/archive", authMiddleware, func(c *gin.Context) {

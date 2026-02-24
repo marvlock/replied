@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users, Bookmark, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -24,6 +24,11 @@ interface Message {
         content: string;
         created_at: string;
     }[];
+    receiver_id?: string;
+    profiles?: {
+        username: string;
+        avatar_url?: string;
+    };
 }
 
 export default function InboxPage() {
@@ -40,8 +45,10 @@ export default function InboxPage() {
     const [replyContent, setReplyContent] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
-    const [view, setView] = useState<'inbox' | 'history'>('inbox');
+    const [view, setView] = useState<'inbox' | 'history' | 'bookmarks' | 'likes'>('inbox');
     const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
+    const [bookmarkMessages, setBookmarkMessages] = useState<Message[]>([]);
+    const [likedMessages, setLikedMessages] = useState<Message[]>([]);
     const [archiving, setArchiving] = useState<string | null>(null);
     const router = useRouter();
 
@@ -60,6 +67,8 @@ export default function InboxPage() {
 
         fetchMessages();
         fetchHistory();
+        fetchBookmarks();
+        fetchLikes();
 
         // Subscribe to real-time updates for new messages
         const channel = supabase
@@ -195,6 +204,44 @@ export default function InboxPage() {
         }
     };
 
+    const fetchBookmarks = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/bookmarks`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setBookmarkMessages(data);
+            }
+        } catch (err) {
+            console.error('Error fetching bookmarks:', err);
+        }
+    };
+
+    const fetchLikes = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/likes`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setLikedMessages(data);
+            }
+        } catch (err) {
+            console.error('Error fetching likes:', err);
+        }
+    };
+
     const handleDelete = async (messageId: string) => {
         setMessageToDelete(null);
 
@@ -235,23 +282,37 @@ export default function InboxPage() {
             <div className="max-w-4xl mx-auto">
                 <header className="flex flex-col items-center md:flex-row md:items-center justify-between mb-12 gap-6 text-center md:text-left">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-white">{view === 'inbox' ? 'Your Inbox' : 'The Ledger'}</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-white">
+                            {view === 'inbox' ? 'Your Inbox' : view === 'history' ? 'The Ledger' : view === 'bookmarks' ? 'Bookmarks' : 'Liked'}
+                        </h1>
                         <p className="text-stone-400 mt-1 font-serif italic text-sm">
                             {view === 'inbox'
                                 ? `Found ${messages.length} messages waiting`
-                                : `Reviewing ${historyMessages.length} conversations`}
+                                : view === 'history'
+                                    ? `Reviewing ${historyMessages.length} conversations`
+                                    : view === 'bookmarks'
+                                        ? `You have ${bookmarkMessages.length} saved insights`
+                                        : `You've hearted ${likedMessages.length} moments`}
                         </p>
                     </div>
                     <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 w-full md:w-auto">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history')} className="bg-white/5 p-1 rounded-xl w-full sm:w-64">
-                            <TabsList className="bg-transparent border-none w-full grid grid-cols-2">
-                                <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-4 gap-2 transition-all">
-                                    <InboxIcon className="w-4 h-4" />
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'bookmarks' | 'likes')} className="bg-white/5 p-1 rounded-xl w-full sm:w-[460px]">
+                            <TabsList className="bg-transparent border-none w-full grid grid-cols-4">
+                                <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
+                                    <InboxIcon className="w-3.5 h-3.5" />
                                     Inbox
                                 </TabsTrigger>
-                                <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-4 gap-2 transition-all">
-                                    <History className="w-4 h-4" />
+                                <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
+                                    <History className="w-3.5 h-3.5" />
                                     Ledger
+                                </TabsTrigger>
+                                <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
+                                    <Bookmark className="w-3.5 h-3.5" />
+                                    Saved
+                                </TabsTrigger>
+                                <TabsTrigger value="likes" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
+                                    <Heart className="w-3.5 h-3.5" />
+                                    Liked
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -397,12 +458,13 @@ export default function InboxPage() {
                                     ))}
                                 </div>
                             )
-                        ) : (
+                        ) : view === 'history' ? (
                             historyMessages.length === 0 ? (
                                 <motion.div
                                     key="empty-history"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
                                     className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
                                 >
                                     <History className="w-12 h-12 mx-auto text-stone-700 mb-4" />
@@ -459,6 +521,128 @@ export default function InboxPage() {
                                                                     <span className="text-[9px] font-mono text-stone-600 uppercase tracking-widest font-bold">Your Official Response</span>
                                                                 </div>
                                                                 <p className="text-stone-200 font-serif leading-relaxed">
+                                                                    {reply.content}
+                                                                </p>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </CardHeader>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )
+                        ) : view === 'bookmarks' ? (
+                            bookmarkMessages.length === 0 ? (
+                                <motion.div
+                                    key="empty-bookmarks"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                >
+                                    <Bookmark className="w-12 h-12 mx-auto text-stone-700 mb-4" />
+                                    <h3 className="text-lg font-serif italic text-stone-500">Nothing saved yet.</h3>
+                                    <p className="text-stone-600 text-sm">Bookmarks from public profiles will appear here.</p>
+                                </motion.div>
+                            ) : (
+                                <div className="grid gap-6">
+                                    {bookmarkMessages.map((msg) => (
+                                        <motion.div
+                                            key={msg.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                        >
+                                            <Card className="border-stone-800 bg-stone-900/40 backdrop-blur-xl rounded-3xl overflow-hidden hover:border-stone-700 transition-all">
+                                                <CardHeader className="p-8">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                            <span className="text-[10px] text-stone-500 font-mono uppercase tracking-[0.3em] font-black">
+                                                                Saved Insight • @{msg.profiles?.username}
+                                                            </span>
+                                                        </div>
+                                                        <Link href={`/${msg.profiles?.username}`}>
+                                                            <Button variant="ghost" size="sm" className="text-[9px] uppercase tracking-widest font-bold text-stone-500 hover:text-white">
+                                                                View Profile
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                    <CardTitle className="text-xl leading-relaxed font-serif italic text-stone-300">
+                                                        &quot;{msg.content}&quot;
+                                                    </CardTitle>
+
+                                                    {(() => {
+                                                        const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
+                                                        if (!reply || !reply.content) return null;
+
+                                                        return (
+                                                            <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-white/5">
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest font-bold">Official Response</span>
+                                                                </div>
+                                                                <p className="text-stone-200 font-serif leading-relaxed italic">
+                                                                    {reply.content}
+                                                                </p>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </CardHeader>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            likedMessages.length === 0 ? (
+                                <motion.div
+                                    key="empty-likes"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                >
+                                    <Heart className="w-12 h-12 mx-auto text-stone-700 mb-4" />
+                                    <h3 className="text-lg font-serif italic text-stone-500">No hearts yet.</h3>
+                                    <p className="text-stone-600 text-sm">Messages you heart will be collected here.</p>
+                                </motion.div>
+                            ) : (
+                                <div className="grid gap-6">
+                                    {likedMessages.map((msg) => (
+                                        <motion.div
+                                            key={msg.id}
+                                            initial={{ opacity: 0, scale: 0.98 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                        >
+                                            <Card className="border-stone-800 bg-stone-900/40 backdrop-blur-xl rounded-3xl overflow-hidden hover:border-red-500/30 transition-all border-l-4 border-l-red-500/50">
+                                                <CardHeader className="p-8">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <Heart className="w-3 h-3 text-red-500 fill-current" />
+                                                            <span className="text-[10px] text-stone-500 font-mono uppercase tracking-[0.3em] font-black">
+                                                                Liked Moment • @{msg.profiles?.username}
+                                                            </span>
+                                                        </div>
+                                                        <Link href={`/${msg.profiles?.username}`}>
+                                                            <Button variant="ghost" size="sm" className="text-[9px] uppercase tracking-widest font-bold text-stone-500 hover:text-white">
+                                                                Explore more
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                    <CardTitle className="text-xl leading-relaxed font-serif italic text-stone-100">
+                                                        &quot;{msg.content}&quot;
+                                                    </CardTitle>
+
+                                                    {(() => {
+                                                        const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
+                                                        if (!reply || !reply.content) return null;
+
+                                                        return (
+                                                            <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-white/5 relative">
+                                                                <div className="flex items-center gap-2 mb-3">
+                                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest font-bold">Official Response</span>
+                                                                </div>
+                                                                <p className="text-stone-200 font-serif leading-relaxed italic">
                                                                     {reply.content}
                                                                 </p>
                                                             </div>
