@@ -103,50 +103,44 @@ func decrypt(ciphertextHex string) (string, error) {
 	return string(plaintext), nil
 }
 
-func decryptMessageMap(m interface{}) interface{} {
+func decryptRecursive(m interface{}) interface{} {
 	if m == nil {
 		return nil
 	}
 
-	// Handle slices (e.g., joined messages or arrays of messages)
-	if slice, ok := m.([]interface{}); ok {
-		for i, item := range slice {
-			slice[i] = decryptMessageMap(item)
+	switch v := m.(type) {
+	case []interface{}:
+		for i, item := range v {
+			v[i] = decryptRecursive(item)
 		}
-		return slice
-	}
-
-	// Handle maps (message objects)
-	msgMap, ok := m.(map[string]interface{})
-	if !ok {
-		return m
-	}
-
-	// Decrypt message content
-	if content, ok := msgMap["content"].(string); ok && len(content) > 32 {
-		// Only try to decrypt if it looks like a hex-encoded GCM block (at least nonce + tag)
-		if dec, err := decrypt(content); err == nil {
-			msgMap["content"] = dec
-		} else {
-			// If it fails, we keep the original content but log the error
-			// Avoid logging the full content for privacy, just the error and length
-			if !strings.Contains(content, " ") && len(content)%2 == 0 {
-				log.Printf("DECRYPTION_FAIL: %v (len: %d)", err, len(content))
+		return v
+	case map[string]interface{}:
+		// If this map has a "content" field, try to decrypt it
+		if content, ok := v["content"].(string); ok && len(content) > 20 {
+			if dec, err := decrypt(content); err == nil {
+				v["content"] = dec
+			} else {
+				// Only log if it looks like it might be an encrypted hex string (no spaces, even length)
+				if !strings.Contains(content, " ") && len(content)%2 == 0 {
+					log.Printf("DEBUG: Decryption failed for content (len %d): %v", len(content), err)
+				}
 			}
 		}
-	}
 
-	// Decrypt replies recursively
-	if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
-		msgMap["replies"] = decryptMessageMap(repliesVal)
+		// Recursively process all fields (including "replies", "message", "profiles", etc.)
+		for key, val := range v {
+			if val != nil {
+				v[key] = decryptRecursive(val)
+			}
+		}
+		return v
+	default:
+		return v
 	}
+}
 
-	// Also check if there's a nested 'message' object (common in bookmarks/likes)
-	if nestedMsg, ok := msgMap["message"]; ok && nestedMsg != nil {
-		msgMap["message"] = decryptMessageMap(nestedMsg)
-	}
-
-	return msgMap
+func decryptMessageMap(m interface{}) interface{} {
+	return decryptRecursive(m)
 }
 
 func sendEmailNotification(toEmail, username, content string) {
