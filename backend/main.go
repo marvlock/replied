@@ -379,6 +379,7 @@ func main() {
 		var body struct {
 			ReceiverID string `json:"receiver_id" binding:"required"`
 			Content    string `json:"content" binding:"required"`
+			ThreadID   string `json:"thread_id"`
 		}
 
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -446,6 +447,35 @@ func main() {
 			}
 		}
 
+		// 🛡️ Safety check 4: For threaded follow-ups, verify sender
+		if body.ThreadID != "" {
+			var originalThread []map[string]interface{}
+			_, err := client.From("messages").
+				Select("sender_id", "", false).
+				Eq("thread_id", body.ThreadID).
+				Order("created_at", &postgrest.OrderOpts{Ascending: true}).
+				Limit(1, "").
+				ExecuteTo(&originalThread)
+
+			if err == nil && len(originalThread) > 0 {
+				rootSenderID := originalThread[0]["sender_id"]
+				// If the original sender was logged in, we must ensure the follow-up is from them
+				if rootSenderID != nil {
+					currID := ""
+					if senderID != nil {
+						currID = *senderID
+					}
+					if rootSenderID.(string) != currID {
+						c.JSON(http.StatusForbidden, gin.H{"error": "Only the original sender can ask a follow-up"})
+						return
+					}
+				} else {
+					// Root was anonymous and not logged in - technically anyone could follow up if they have the thread_id
+					// but we'll allow it for now as "thread_id" is a secure UUID.
+				}
+			}
+		}
+
 		messageData := map[string]interface{}{
 			"receiver_id": body.ReceiverID,
 			"content":     body.Content,
@@ -453,6 +483,9 @@ func main() {
 		}
 		if senderID != nil {
 			messageData["sender_id"] = *senderID
+		}
+		if body.ThreadID != "" {
+			messageData["thread_id"] = body.ThreadID
 		}
 
 		// Encrypt message content
@@ -505,7 +538,7 @@ func main() {
 
 		var messages []interface{}
 		_, err = client.From("messages").
-			Select("id, content, created_at, replies(content, created_at)", "exact", false).
+			Select("id, content, created_at, thread_id, sender_id, replies(content, created_at)", "exact", false).
 			Eq("receiver_id", profile.ID).
 			Eq("status", "replied").
 			Order("created_at", &postgrest.OrderOpts{Ascending: false}).

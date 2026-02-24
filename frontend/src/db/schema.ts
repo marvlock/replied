@@ -20,6 +20,7 @@ export const messages = pgTable("messages", {
     isAnonymous: boolean("is_anonymous").default(true).notNull(),
     status: text("status", { enum: ["pending", "replied", "archived"] }).default("pending").notNull(),
     senderId: uuid("sender_id").references(() => profiles.id, { onDelete: 'set null' }),
+    threadId: uuid("thread_id").defaultRandom().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -24,6 +24,8 @@ interface Conversation {
     id: string;
     content: string;
     created_at: string;
+    thread_id: string;
+    sender_id?: string;
     replies: any;
 }
 
@@ -34,6 +36,8 @@ export default function PublicProfileClient({ username }: { username: string }) 
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [minLoading, setMinLoading] = useState(true);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [replyingToThread, setReplyingToThread] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setMinLoading(false), 2000);
@@ -43,6 +47,9 @@ export default function PublicProfileClient({ username }: { username: string }) 
     useEffect(() => {
         async function fetchData() {
             try {
+                const { data: { session } } = await supabase.auth.getSession();
+                setCurrentUserId(session?.user.id || null);
+
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/${username}`);
                 if (response.ok) {
                     const data = await response.json();
@@ -79,12 +86,14 @@ export default function PublicProfileClient({ username }: { username: string }) 
                 body: JSON.stringify({
                     receiver_id: profile.id,
                     content: message,
+                    thread_id: replyingToThread || undefined
                 })
             });
 
             if (response.ok) {
-                toast.success('Message sent! It will appear if replied to.');
+                toast.success(replyingToThread ? 'Follow-up sent!' : 'Message sent! It will appear if replied to.');
                 setMessage('');
+                setReplyingToThread(null);
             } else {
                 const errData = await response.json();
                 toast.error(errData.error || 'Failed to send');
@@ -170,12 +179,27 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                 ) : (
                                     <>
                                         <Textarea
-                                            placeholder="Ask me anything anonymously..."
+                                            placeholder={replyingToThread ? "Type your follow-up anonymous question..." : "Ask me anything anonymously..."}
                                             className="min-h-[180px] bg-transparent border-none focus-visible:ring-0 text-xl p-8 resize-none text-stone-200 placeholder:text-stone-800 transition-all duration-300 font-serif"
                                             value={message}
                                             onChange={(e) => setMessage(e.target.value)}
                                             maxLength={500}
                                         />
+
+                                        {replyingToThread && (
+                                            <div className="px-8 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                    <span className="text-[10px] font-mono text-primary uppercase tracking-widest font-black">Thread Active</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setReplyingToThread(null)}
+                                                    className="text-[10px] font-mono text-stone-600 hover:text-white uppercase tracking-widest font-bold underline"
+                                                >
+                                                    Cancel Follow-up
+                                                </button>
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center justify-between px-8 pb-6">
                                             <div className="flex flex-col gap-1">
@@ -220,52 +244,88 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                     No conversations public yet.
                                 </motion.p>
                             ) : (
-                                publishedPairs.map((pair, idx) => (
-                                    <motion.div
-                                        key={pair.id}
-                                        initial={{ opacity: 0, y: 40 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        viewport={{ once: true, margin: "-100px" }}
-                                        transition={{ duration: 0.8, delay: idx * 0.1, ease: [0.21, 0.45, 0.32, 0.9] }}
-                                        className="relative"
-                                    >
-                                        <div className="space-y-8">
-                                            {/* Question */}
-                                            <div className="max-w-[85%] space-y-3 text-left">
-                                                <div className="flex items-center gap-2 px-1">
-                                                    <div className="w-1 h-1 rounded-full bg-stone-500" />
-                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">Anonymous Ask</span>
-                                                </div>
-                                                <div className="p-6 rounded-[28px] rounded-tl-none bg-white/[0.02] border border-white/5 text-stone-300 leading-relaxed italic font-serif text-lg shadow-inner">
-                                                    &quot;{pair.content}&quot;
-                                                </div>
-                                            </div>
+                                (() => {
+                                    // Group messages by thread_id
+                                    const threads: Record<string, Conversation[]> = {};
+                                    publishedPairs.forEach(pair => {
+                                        if (!threads[pair.thread_id]) threads[pair.thread_id] = [];
+                                        threads[pair.thread_id].push(pair);
+                                    });
 
-                                            {/* Response */}
-                                            {(() => {
-                                                const reply = Array.isArray(pair.replies) ? pair.replies[0] : pair.replies;
-                                                if (!reply || !reply.content) return null;
-
-                                                return (
-                                                    <div className="ml-auto max-w-[92%] space-y-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2 px-1">
-                                                            <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">Official Response</span>
-                                                            <div className="h-px w-4 bg-stone-800" />
-                                                            <span className="text-[9px] font-mono text-white uppercase tracking-widest font-black">@{profile.username}</span>
+                                    // Sort each thread by created_at ascending for natural conversation flow
+                                    return Object.entries(threads).sort((a, b) => {
+                                        // Sort threads by the latest message in each thread DESC
+                                        const latestA = new Date(Math.max(...a[1].map(m => new Date(m.created_at).getTime()))).getTime();
+                                        const latestB = new Date(Math.max(...b[1].map(m => new Date(m.created_at).getTime()))).getTime();
+                                        return latestB - latestA;
+                                    }).map(([threadId, messages], tIdx) => (
+                                        <motion.div
+                                            key={threadId}
+                                            initial={{ opacity: 0, y: 40 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true, margin: "-100px" }}
+                                            transition={{ duration: 0.8, delay: tIdx * 0.1, ease: [0.21, 0.45, 0.32, 0.9] }}
+                                            className="space-y-12 pb-12 border-b border-stone-900 last:border-0"
+                                        >
+                                            {messages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((pair, idx) => (
+                                                <div key={pair.id} className="space-y-8">
+                                                    {/* Question */}
+                                                    <div className="max-w-[85%] space-y-3 text-left">
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <div className="w-1 h-1 rounded-full bg-stone-500" />
+                                                            <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">
+                                                                {idx === 0 ? 'Anonymous Ask' : 'Follow-up Ask'}
+                                                            </span>
                                                         </div>
-                                                        <div className="p-8 rounded-[32px] rounded-br-none bg-gradient-to-br from-stone-800 via-stone-900 to-black text-white leading-relaxed shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif text-lg border border-white/5 relative overflow-hidden group">
-                                                            {/* Subtle inner glow */}
-                                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
-                                                            <div className="relative z-10">
-                                                                {reply.content}
-                                                            </div>
+                                                        <div className="p-6 rounded-[28px] rounded-tl-none bg-white/[0.02] border border-white/5 text-stone-300 leading-relaxed italic font-serif text-lg shadow-inner">
+                                                            &quot;{pair.content}&quot;
                                                         </div>
                                                     </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    </motion.div>
-                                ))
+
+                                                    {/* Response */}
+                                                    {(() => {
+                                                        const reply = Array.isArray(pair.replies) ? pair.replies[0] : pair.replies;
+                                                        if (!reply || !reply.content) return null;
+
+                                                        return (
+                                                            <div className="ml-auto max-w-[92%] space-y-3 text-right">
+                                                                <div className="flex items-center justify-end gap-2 px-1">
+                                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-[0.2em] font-bold">Official Response</span>
+                                                                    <div className="h-px w-4 bg-stone-800" />
+                                                                    <span className="text-[9px] font-mono text-white uppercase tracking-widest font-black">@{profile.username}</span>
+                                                                </div>
+                                                                <div className="p-8 rounded-[32px] rounded-br-none bg-gradient-to-br from-stone-800 via-stone-900 to-black text-white leading-relaxed shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif text-lg border border-white/5 relative overflow-hidden group">
+                                                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
+                                                                    <div className="relative z-10">
+                                                                        {reply.content}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            ))}
+
+                                            {/* Ask Follow-up Button (Only for original sender) */}
+                                            {messages[0].sender_id === currentUserId && (
+                                                <div className="flex justify-start px-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setReplyingToThread(threadId);
+                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                            toast.info('Asking a follow-up...');
+                                                        }}
+                                                        className="text-[10px] uppercase tracking-widest font-bold text-stone-500 hover:text-white hover:bg-white/5 rounded-full px-4"
+                                                    >
+                                                        + Ask Follow-up
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    ));
+                                })()
                             )}
                         </AnimatePresence>
                     </div>
