@@ -80,6 +80,56 @@ export default function SettingsPage() {
         }
     }, [user]);
 
+    const handleTogglePause = async (checked: boolean) => {
+        // Optimistic update
+        setFormData(prev => ({ ...prev, is_paused: checked }));
+
+        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/toggle-pause`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ is_paused: checked })
+            });
+
+            if (!response.ok) {
+                // Revert if failed
+                setFormData(prev => ({ ...prev, is_paused: !checked }));
+                toast.error('Failed to update status');
+            } else {
+                toast.success(checked ? 'Inbox paused' : 'Inbox active');
+            }
+        } catch {
+            setFormData(prev => ({ ...prev, is_paused: !checked }));
+            toast.error('Connection error');
+        }
+    };
+
+    const handleUpdateBlockedPhrases = async (newPhrases: string[]) => {
+        setFormData(prev => ({ ...prev, blocked_phrases: newPhrases }));
+
+        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/blocked-phrases`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ phrases: newPhrases })
+            });
+
+            if (!response.ok) {
+                toast.error('Failed to update phrases');
+            }
+        } catch {
+            toast.error('Connection error');
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         const { data: { session } } = await supabase.auth.getSession();
@@ -265,7 +315,7 @@ export default function SettingsPage() {
                                 </div>
                                 <Switch
                                     checked={formData.is_paused}
-                                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, is_paused: checked })}
+                                    onCheckedChange={handleTogglePause}
                                 />
                             </div>
 
@@ -286,7 +336,7 @@ export default function SettingsPage() {
                                             if (e.key === 'Enter') {
                                                 const val = e.currentTarget.value.trim();
                                                 if (val && !formData.blocked_phrases.includes(val)) {
-                                                    setFormData({ ...formData, blocked_phrases: [...formData.blocked_phrases, val] });
+                                                    handleUpdateBlockedPhrases([...formData.blocked_phrases, val]);
                                                     e.currentTarget.value = '';
                                                 }
                                             }
@@ -299,7 +349,7 @@ export default function SettingsPage() {
                                         <div key={phrase} className="flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-xs border border-stone-700">
                                             {phrase}
                                             <button
-                                                onClick={() => setFormData({ ...formData, blocked_phrases: formData.blocked_phrases.filter(p => p !== phrase) })}
+                                                onClick={() => handleUpdateBlockedPhrases(formData.blocked_phrases.filter(p => p !== phrase))}
                                                 className="hover:text-white cursor-pointer"
                                             >
                                                 <X className="w-3 h-3" />
