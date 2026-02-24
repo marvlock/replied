@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X, AlertTriangle, Twitter, Instagram, MessageCircle } from 'lucide-react';
+import { User, Shield, Share2, ArrowLeft, Copy, Check, QrCode, Lock, Ghost, X, AlertTriangle, Twitter, Instagram, MessageCircle, Camera, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -35,6 +35,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [minLoading, setMinLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setMinLoading(false), 2000);
@@ -56,23 +57,29 @@ export default function SettingsPage() {
     useEffect(() => {
         const fetchProfile = async () => {
             if (!user) return;
-            const { data } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (data) {
-                setFormData({
-                    display_name: data.display_name || '',
-                    bio: data.bio || '',
-                    username: data.username || '',
-                    avatar_url: data.avatar_url || '',
-                    is_paused: data.is_paused || false,
-                    blocked_phrases: data.blocked_phrases || []
+            const { data: { session } } = await supabase.auth.getSession();
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${session?.access_token}`
+                    }
                 });
+                if (response.ok) {
+                    const data = await response.json();
+                    setFormData({
+                        display_name: data.display_name || '',
+                        bio: data.bio || '',
+                        username: data.username || '',
+                        avatar_url: data.avatar_url || '',
+                        is_paused: data.is_paused || false,
+                        blocked_phrases: data.blocked_phrases || []
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch profile:', err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         if (user) {
@@ -105,6 +112,52 @@ export default function SettingsPage() {
         } catch {
             setFormData(prev => ({ ...prev, is_paused: !checked }));
             toast.error('Connection error');
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validation
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload an image file');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('Image must be less than 2MB');
+            return;
+        }
+
+        setUploading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            // 1. Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // 3. Update local state
+            setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+            toast.success('Image uploaded! Remember to save changes.');
+        } catch (error: any) {
+            console.error('Storage error:', error);
+            toast.error(error.message || 'Failed to upload image');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -373,6 +426,46 @@ export default function SettingsPage() {
                             <CardTitle className="text-white">Profile Customization</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                            <div className="flex flex-col items-center gap-6 pb-6 border-b border-stone-800/50">
+                                <div className="relative group">
+                                    <div className="w-24 h-24 rounded-full overflow-hidden bg-stone-900 border-2 border-stone-800 shadow-xl relative">
+                                        {formData.avatar_url ? (
+                                            <Image
+                                                src={formData.avatar_url}
+                                                alt="Profile"
+                                                width={96}
+                                                height={96}
+                                                unoptimized
+                                                className={`w-full h-full object-cover transition-opacity ${uploading ? 'opacity-30' : 'opacity-100'}`}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-3xl font-light text-stone-700">
+                                                {formData.username?.[0]?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
+                                        {uploading && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors shadow-lg border-2 border-black">
+                                        <Camera className="w-4 h-4" />
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-stone-200 font-bold tracking-tight">Profile Picture</p>
+                                    <p className="text-[10px] text-stone-600 uppercase tracking-widest mt-1">PNG, JPG up to 2MB</p>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Username Handle</label>
                                 <Input

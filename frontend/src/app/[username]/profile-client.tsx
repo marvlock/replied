@@ -42,43 +42,20 @@ export default function PublicProfileClient({ username }: { username: string }) 
 
     useEffect(() => {
         async function fetchData() {
-            // 1. Fetch Profile
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .single();
-
-            if (profileError) {
-                console.error('Error fetching profile:', profileError);
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/${username}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setProfile(data.profile);
+                    setPublishedPairs(data.messages || []);
+                } else {
+                    console.error('Failed to fetch profile from backend');
+                }
+            } catch (err) {
+                console.error('Error fetching profile from backend:', err);
+            } finally {
                 setLoading(false);
-                return;
             }
-            setProfile(profileData);
-
-            // 2. Fetch Published Conversations
-            const { data: messagesData, error: messagesError } = await supabase
-                .from('messages')
-                .select(`
-          id,
-          content,
-          created_at,
-          replies (
-            content,
-            created_at
-          )
-        `)
-                .eq('receiver_id', profileData.id)
-                .eq('status', 'replied')
-                .order('created_at', { ascending: false });
-
-            if (messagesError) {
-                console.error('Error fetching conversations:', messagesError);
-            } else {
-                setPublishedPairs(messagesData || []);
-            }
-
-            setLoading(false);
         }
         fetchData();
     }, [username]);

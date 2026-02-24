@@ -74,9 +74,8 @@ export default function InboxPage() {
                 },
                 (payload) => {
                     const newMessage = payload.new as Message;
-                    // Only add if it's pending (though the filter should handle most)
                     if (newMessage && newMessage.status === 'pending') {
-                        setMessages(prev => [newMessage, ...prev]);
+                        fetchMessages(); // Re-fetch to get decrypted content
                         toast('New message received!', {
                             icon: <InboxIcon className="w-4 h-4" />
                         });

@@ -86,23 +86,34 @@ export default function SetupPage() {
             return;
         }
 
-        const { error } = await supabase
-            .from('profiles')
-            .upsert({
-                id: session.user.id,
-                username: username.toLowerCase(),
-                display_name: username.toLowerCase(),
-                avatar_url: session.user.user_metadata.avatar_url || '',
-                email: session.user.email,
-                updated_at: new Date().toISOString(),
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    id: session.user.id,
+                    username: username.toLowerCase(),
+                    display_name: username.toLowerCase(),
+                    avatar_url: session.user.user_metadata.avatar_url || '',
+                    email: session.user.email,
+                    updated_at: new Date().toISOString(),
+                })
             });
 
-        if (error) {
-            toast.error(error.message);
+            if (response.ok) {
+                toast.success('Profile created! Welcome to Replied.');
+                router.push('/inbox');
+            } else {
+                const errData = await response.json();
+                toast.error(errData.error || 'Failed to create profile');
+            }
+        } catch (err) {
+            toast.error('Connection error');
+        } finally {
             setLoading(false);
-        } else {
-            toast.success('Profile created! Welcome to Replied.');
-            router.push('/inbox');
         }
     };
 

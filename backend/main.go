@@ -12,6 +12,12 @@ import (
 
 	"strings"
 
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/hex"
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
@@ -33,6 +39,68 @@ func containsProfanity(text string) bool {
 		}
 	}
 	return false
+}
+
+func encrypt(text string) (string, error) {
+	keyHex := os.Getenv("ENCRYPTION_KEY")
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(text), nil)
+	return hex.EncodeToString(ciphertext), nil
+}
+
+func decrypt(ciphertextHex string) (string, error) {
+	keyHex := os.Getenv("ENCRYPTION_KEY")
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext, err := hex.DecodeString(ciphertextHex)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, actualCiphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, actualCiphertext, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plaintext), nil
 }
 
 func sendEmailNotification(toEmail, username, content string) {
@@ -82,6 +150,10 @@ func main() {
 
 	if supabaseURL == "" || supabaseKey == "" {
 		log.Fatal("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
+	}
+
+	if os.Getenv("ENCRYPTION_KEY") == "" {
+		log.Fatal("ENCRYPTION_KEY must be set")
 	}
 
 	// Initialize Supabase client
@@ -170,6 +242,18 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Decrypt messages
+		for i, m := range messages {
+			msgMap := m.(map[string]interface{})
+			if content, ok := msgMap["content"].(string); ok {
+				if dec, err := decrypt(content); err == nil {
+					msgMap["content"] = dec
+				}
+			}
+			messages[i] = msgMap
+		}
+
 		c.JSON(http.StatusOK, messages)
 	})
 	// History: Get non-pending messages (replied, archived)
@@ -190,6 +274,30 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		// Decrypt messages and their replies
+		for i, m := range messages {
+			msgMap := m.(map[string]interface{})
+			if content, ok := msgMap["content"].(string); ok {
+				if dec, err := decrypt(content); err == nil {
+					msgMap["content"] = dec
+				}
+			}
+
+			if replies, ok := msgMap["replies"].([]interface{}); ok {
+				for j, r := range replies {
+					replyMap := r.(map[string]interface{})
+					if rContent, ok := replyMap["content"].(string); ok {
+						if dec, err := decrypt(rContent); err == nil {
+							replyMap["content"] = dec
+						}
+					}
+					replies[j] = replyMap
+				}
+			}
+			messages[i] = msgMap
+		}
+
 		c.JSON(http.StatusOK, messages)
 	})
 
@@ -208,15 +316,22 @@ func main() {
 		user, _ := c.Get("user")
 		supabaseUser := user.(types.User)
 
+		// Encrypt the content
+		encryptedContent, err := encrypt(body.Content)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
+			return
+		}
+
 		// 1. Create the reply
 		replyData := map[string]interface{}{
 			"message_id": body.MessageID,
 			"sender_id":  supabaseUser.ID.String(),
-			"content":    body.Content,
+			"content":    encryptedContent,
 		}
 
 		var newReply []interface{}
-		_, err := client.From("replies").Insert(replyData, false, "", "", "").ExecuteTo(&newReply)
+		_, err = client.From("replies").Insert(replyData, false, "", "", "").ExecuteTo(&newReply)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create reply: " + err.Error()})
 			return
@@ -296,6 +411,15 @@ func main() {
 			return
 		}
 
+		// Decrypt email for notification
+		if receiverProfile.Email != "" {
+			if decryptedEmail, err := decrypt(receiverProfile.Email); err == nil {
+				receiverProfile.Email = decryptedEmail
+			} else {
+				log.Printf("Failed to decrypt email for %s: %v", receiverProfile.Username, err)
+			}
+		}
+
 		if receiverProfile.IsPaused {
 			c.JSON(http.StatusForbidden, gin.H{"error": "This inbox is currently paused by the owner"})
 			return
@@ -331,6 +455,14 @@ func main() {
 			messageData["sender_id"] = *senderID
 		}
 
+		// Encrypt message content
+		encryptedContent, err := encrypt(body.Content)
+		if err == nil {
+			messageData["content"] = encryptedContent
+		} else {
+			log.Printf("Encryption error: %v", err)
+		}
+
 		var newMessage []interface{}
 		_, err = client.From("messages").Insert(messageData, false, "", "", "").ExecuteTo(&newMessage)
 
@@ -345,6 +477,67 @@ func main() {
 		}
 
 		c.JSON(http.StatusCreated, gin.H{"status": "sent"})
+	})
+
+	// Public Profile: Fetch profile and decrypted conversations
+	r.GET("/profile/:username", func(c *gin.Context) {
+		username := c.Param("username")
+
+		var profile struct {
+			ID          string `json:"id"`
+			Username    string `json:"username"`
+			DisplayName string `json:"display_name"`
+			AvatarURL   string `json:"avatar_url"`
+			Bio         string `json:"bio"`
+			IsPaused    bool   `json:"is_paused"`
+		}
+
+		_, err := client.From("profiles").
+			Select("*", "", false).
+			Eq("username", username).
+			Single().
+			ExecuteTo(&profile)
+
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+			return
+		}
+
+		var messages []interface{}
+		_, err = client.From("messages").
+			Select("id, content, created_at, replies(content, created_at)", "exact", false).
+			Eq("receiver_id", profile.ID).
+			Eq("status", "replied").
+			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
+			ExecuteTo(&messages)
+
+		// Decrypt public conversations
+		for i, m := range messages {
+			msgMap := m.(map[string]interface{})
+			if content, ok := msgMap["content"].(string); ok {
+				if dec, err := decrypt(content); err == nil {
+					msgMap["content"] = dec
+				}
+			}
+
+			if replies, ok := msgMap["replies"].([]interface{}); ok {
+				for j, r := range replies {
+					replyMap := r.(map[string]interface{})
+					if rContent, ok := replyMap["content"].(string); ok {
+						if dec, err := decrypt(rContent); err == nil {
+							replyMap["content"] = dec
+						}
+					}
+					replies[j] = replyMap
+				}
+			}
+			messages[i] = msgMap
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"profile":  profile,
+			"messages": messages,
+		})
 	})
 
 	// Report: Flag a message for review
@@ -462,12 +655,41 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "updated"})
 	})
 
-	// Update Profile: Set bio, display name, etc.
+	// Get My Profile (Decrypted)
+	r.GET("/profile", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var profile map[string]interface{}
+		_, err := client.From("profiles").
+			Select("*", "", false).
+			Eq("id", supabaseUser.ID.String()).
+			Single().
+			ExecuteTo(&profile)
+
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+			return
+		}
+
+		// Decrypt email if present
+		if email, ok := profile["email"].(string); ok && email != "" {
+			if dec, err := decrypt(email); err == nil {
+				profile["email"] = dec
+			}
+		}
+
+		c.JSON(http.StatusOK, profile)
+	})
+
+	// Update Profile: Set bio, display name, etc. (Can be used for setup)
 	r.PUT("/profile", authMiddleware, func(c *gin.Context) {
 		var body struct {
+			Username       string   `json:"username"`
 			DisplayName    string   `json:"display_name"`
 			Bio            string   `json:"bio"`
 			AvatarURL      string   `json:"avatar_url"`
+			Email          string   `json:"email"`
 			IsPaused       bool     `json:"is_paused"`
 			BlockedPhrases []string `json:"blocked_phrases"`
 		}
@@ -480,7 +702,19 @@ func main() {
 		user, _ := c.Get("user")
 		supabaseUser := user.(types.User)
 
+		// Encrypt email if provided
+		finalEmail := body.Email
+		if finalEmail != "" {
+			encrypted, err := encrypt(finalEmail)
+			if err == nil {
+				finalEmail = encrypted
+			} else {
+				log.Printf("Email encryption error: %v", err)
+			}
+		}
+
 		updateData := map[string]interface{}{
+			"id":              supabaseUser.ID.String(),
 			"display_name":    body.DisplayName,
 			"bio":             body.Bio,
 			"avatar_url":      body.AvatarURL,
@@ -489,10 +723,16 @@ func main() {
 			"updated_at":      "now()",
 		}
 
+		if body.Username != "" {
+			updateData["username"] = body.Username
+		}
+		if finalEmail != "" {
+			updateData["email"] = finalEmail
+		}
+
 		var updatedProfile []interface{}
 		_, err := client.From("profiles").
-			Update(updateData, "", "").
-			Eq("id", supabaseUser.ID.String()).
+			Upsert(updateData, "", "", "").
 			ExecuteTo(&updatedProfile)
 
 		if err != nil {
