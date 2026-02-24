@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users, Bookmark, Heart } from 'lucide-react';
+import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users, Bookmark, Heart, Activity, Clock, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -45,8 +45,9 @@ export default function InboxPage() {
     const [replyContent, setReplyContent] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
-    const [view, setView] = useState<'inbox' | 'history' | 'bookmarks' | 'likes'>('inbox');
+    const [view, setView] = useState<'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes'>('inbox');
     const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
+    const [feedMessages, setFeedMessages] = useState<Message[]>([]);
     const [bookmarkMessages, setBookmarkMessages] = useState<Message[]>([]);
     const [likedMessages, setLikedMessages] = useState<Message[]>([]);
     const [archiving, setArchiving] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export default function InboxPage() {
 
         fetchMessages();
         fetchHistory();
+        fetchFeed();
         fetchBookmarks();
         fetchLikes();
 
@@ -242,6 +244,25 @@ export default function InboxPage() {
         }
     };
 
+    const fetchFeed = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/friends/feed`, {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setFeedMessages(data);
+            }
+        } catch (err) {
+            console.error('Error fetching feed:', err);
+        }
+    };
+
     const handleDelete = async (messageId: string) => {
         setMessageToDelete(null);
 
@@ -283,21 +304,23 @@ export default function InboxPage() {
                 <header className="flex flex-col items-center md:flex-row md:items-center justify-between mb-12 gap-6 text-center md:text-left">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-white">
-                            {view === 'inbox' ? 'Your Inbox' : view === 'history' ? 'The Ledger' : view === 'bookmarks' ? 'Bookmarks' : 'Liked'}
+                            {view === 'inbox' ? 'Your Inbox' : view === 'history' ? 'The Ledger' : view === 'feed' ? 'The Pulse' : view === 'bookmarks' ? 'Bookmarks' : 'Liked'}
                         </h1>
                         <p className="text-stone-400 mt-1 font-serif italic text-sm">
                             {view === 'inbox'
                                 ? `Found ${messages.length} messages waiting`
                                 : view === 'history'
                                     ? `Reviewing ${historyMessages.length} conversations`
-                                    : view === 'bookmarks'
-                                        ? `You have ${bookmarkMessages.length} saved insights`
-                                        : `You've hearted ${likedMessages.length} moments`}
+                                    : view === 'feed'
+                                        ? `Seeing ${feedMessages.length} updates from friends`
+                                        : view === 'bookmarks'
+                                            ? `You have ${bookmarkMessages.length} saved insights`
+                                            : `You've hearted ${likedMessages.length} moments`}
                         </p>
                     </div>
                     <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 w-full md:w-auto">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'bookmarks' | 'likes')} className="bg-white/5 p-1 rounded-xl w-full sm:w-[460px]">
-                            <TabsList className="bg-transparent border-none w-full grid grid-cols-4">
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes')} className="bg-white/5 p-1 rounded-xl w-full sm:w-[540px]">
+                            <TabsList className="bg-transparent border-none w-full grid grid-cols-5">
                                 <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
                                     <InboxIcon className="w-3.5 h-3.5" />
                                     Inbox
@@ -305,6 +328,10 @@ export default function InboxPage() {
                                 <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
                                     <History className="w-3.5 h-3.5" />
                                     Ledger
+                                </TabsTrigger>
+                                <TabsTrigger value="feed" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
+                                    <Activity className="w-3.5 h-3.5" />
+                                    Feed
                                 </TabsTrigger>
                                 <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-lg px-2 gap-2 transition-all">
                                     <Bookmark className="w-3.5 h-3.5" />
@@ -527,6 +554,73 @@ export default function InboxPage() {
                                                         );
                                                     })()}
                                                 </CardHeader>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )
+                        ) : view === 'feed' ? (
+                            feedMessages.length === 0 ? (
+                                <motion.div
+                                    key="empty-feed"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                >
+                                    <Activity className="w-12 h-12 mx-auto text-stone-700 mb-4" />
+                                    <h3 className="text-lg font-serif italic text-stone-500">The pulse is quiet.</h3>
+                                    <p className="text-stone-600 text-sm">Add friends to see their public conversations here.</p>
+                                    <Link href="/friends">
+                                        <Button variant="outline" className="mt-6 border-stone-800 rounded-xl">Find Friends</Button>
+                                    </Link>
+                                </motion.div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {feedMessages.map((msg: any) => (
+                                        <motion.div
+                                            key={msg.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                        >
+                                            <Card className="bg-stone-900/30 border-stone-800 hover:border-stone-700 transition-all group overflow-hidden rounded-3xl h-full flex flex-col">
+                                                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-stone-700 flex-shrink-0">
+                                                        {msg.profiles?.avatar_url ? (
+                                                            <img src={msg.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-500">
+                                                                {msg.profiles?.username?.[0]?.toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <Link href={`/${msg.profiles?.username}`} className="text-white font-bold hover:underline truncate block text-sm">
+                                                            @{msg.profiles?.username}
+                                                        </Link>
+                                                        <div className="flex items-center gap-2 text-[9px] text-stone-600 font-mono uppercase tracking-widest">
+                                                            <Clock className="w-3 h-3" />
+                                                            {new Date(msg.created_at).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-4 flex-1 flex flex-col">
+                                                    <div className="bg-black/40 p-4 rounded-2xl border border-stone-800/50 flex-1">
+                                                        <p className="text-stone-300 italic font-serif text-sm italic leading-relaxed">&quot;{msg.content}&quot;</p>
+                                                    </div>
+                                                    {msg.replies?.[0] && (
+                                                        <div className="flex gap-3 pt-2">
+                                                            <div className="w-0.5 bg-stone-800 rounded-full" />
+                                                            <div className="flex-1 py-1">
+                                                                <p className="text-[9px] text-stone-600 font-black mb-1 uppercase tracking-widest flex items-center gap-1">
+                                                                    <MessageSquareQuote className="w-3 h-3" />
+                                                                    Response
+                                                                </p>
+                                                                <p className="text-stone-200 text-xs leading-relaxed font-serif">{msg.replies[0].content}</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
                                             </Card>
                                         </motion.div>
                                     ))}

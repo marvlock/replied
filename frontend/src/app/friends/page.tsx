@@ -6,35 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Check, X, Search, Users, Activity, Clock, MessageSquare } from 'lucide-react';
+import { UserPlus, UserMinus, Check, X, Search, Users, Activity, Clock, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/loading-screen';
 import Link from 'next/link';
 
 export default function FriendsPage() {
-    const [activeTab, setActiveTab] = useState<'feed' | 'requests' | 'search'>('feed');
+    const [activeTab, setActiveTab] = useState<'list' | 'requests' | 'search'>('list');
     const [loading, setLoading] = useState(true);
-    const [feed, setFeed] = useState<any[]>([]);
+    const [friendsList, setFriendsList] = useState<any[]>([]);
     const [requests, setRequests] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
 
     useEffect(() => {
-        if (activeTab === 'feed') fetchFeed();
+        if (activeTab === 'list') fetchFriendsList();
         if (activeTab === 'requests') fetchRequests();
     }, [activeTab]);
 
-    const fetchFeed = async () => {
+    const fetchFriendsList = async () => {
         setLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         try {
-            const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/friends/feed`, {
+            const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/friends/list`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
-            if (resp.ok) setFeed(await resp.json());
+            if (resp.ok) setFriendsList(await resp.json());
         } catch (err) {
-            toast.error('Failed to load feed');
+            toast.error('Failed to load friends');
         } finally {
             setLoading(false);
         }
@@ -112,6 +112,22 @@ export default function FriendsPage() {
         }
     };
 
+    const unfriend = async (friendshipId: string) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/friends/${friendshipId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            if (resp.ok) {
+                toast.success('Unfriended');
+                fetchFriendsList();
+            }
+        } catch (err) {
+            toast.error('Failed to unfriend');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -125,12 +141,12 @@ export default function FriendsPage() {
                 {/* Navigation Tabs */}
                 <div className="flex gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800">
                     <button
-                        onClick={() => setActiveTab('feed')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'feed' ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                        onClick={() => setActiveTab('list')}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'list' ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
                     >
                         <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4" />
-                            Feed
+                            <Users className="w-4 h-4" />
+                            Friend List
                         </div>
                     </button>
                     <button
@@ -156,57 +172,48 @@ export default function FriendsPage() {
 
                 <main className="min-h-[400px]">
                     <AnimatePresence mode="wait">
-                        {activeTab === 'feed' && (
+                        {activeTab === 'list' && (
                             <motion.div
-                                key="feed"
+                                key="list"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                             >
                                 {loading ? (
                                     <div className="col-span-full h-64 flex items-center justify-center">
                                         <LoadingScreen />
                                     </div>
-                                ) : feed.length > 0 ? (
-                                    feed.map((msg: any) => (
-                                        <Card key={msg.id} className="bg-stone-900/30 border-stone-800 hover:border-stone-700 transition-all group">
-                                            <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                                                <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-stone-700">
-                                                    {msg.profiles?.avatar_url ? (
-                                                        <img src={msg.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : friendsList.length > 0 ? (
+                                    friendsList.map((friend: any) => (
+                                        <Card key={friend.username} className="bg-stone-900/30 border-stone-800 hover:border-stone-700 transition-all group overflow-hidden">
+                                            <CardHeader className="flex flex-row items-center gap-4 pb-4">
+                                                <div className="w-12 h-12 rounded-full overflow-hidden bg-stone-800 border border-stone-700">
+                                                    {friend.avatar_url ? (
+                                                        <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-500">
-                                                            {msg.profiles?.username?.[0]?.toUpperCase()}
+                                                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-stone-500 uppercase">
+                                                            {friend.username?.[0]}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <Link href={`/${msg.profiles?.username}`} className="text-white font-bold hover:underline truncate block">
-                                                        {msg.profiles?.display_name || msg.profiles?.username}
+                                                    <Link href={`/${friend.username}`} className="text-white font-bold hover:underline truncate block">
+                                                        @{friend.username}
                                                     </Link>
-                                                    <div className="flex items-center gap-2 text-[10px] text-stone-500 font-mono uppercase tracking-widest">
-                                                        <Clock className="w-3 h-3" />
-                                                        {new Date(msg.created_at).toLocaleDateString()}
-                                                    </div>
+                                                    <p className="text-xs text-stone-500 truncate">{friend.display_name || friend.username}</p>
                                                 </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                <div className="bg-black/40 p-4 rounded-2xl border border-stone-800/50">
-                                                    <p className="text-stone-300 italic font-serif">"{msg.content}"</p>
-                                                </div>
-                                                {msg.replies?.[0] && (
-                                                    <div className="flex gap-3">
-                                                        <div className="w-1 bg-stone-800 rounded-full" />
-                                                        <div className="flex-1 py-1">
-                                                            <p className="text-xs text-stone-500 font-bold mb-1 uppercase tracking-tighter flex items-center gap-1">
-                                                                <MessageSquare className="w-3 h-3" />
-                                                                The Record
-                                                            </p>
-                                                            <p className="text-white text-sm leading-relaxed">{msg.replies[0].content}</p>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                            <CardContent>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => unfriend(friend.friendship_id)}
+                                                    className="w-full text-stone-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-bold flex items-center gap-2"
+                                                >
+                                                    <UserMinus className="w-4 h-4" />
+                                                    Unfriend
+                                                </Button>
                                             </CardContent>
                                         </Card>
                                     ))
@@ -214,8 +221,8 @@ export default function FriendsPage() {
                                     <div className="col-span-full py-20 text-center space-y-4 bg-stone-900/20 rounded-3xl border border-dashed border-stone-800">
                                         <Users className="w-12 h-12 text-stone-800 mx-auto" />
                                         <div>
-                                            <p className="text-stone-500 font-bold">Your feed is empty.</p>
-                                            <p className="text-stone-700 text-sm">Add friends to see their public conversations here.</p>
+                                            <p className="text-stone-500 font-bold">You haven't added anyone yet.</p>
+                                            <p className="text-stone-700 text-sm">Find users to build your circle.</p>
                                         </div>
                                         <Button
                                             variant="outline"

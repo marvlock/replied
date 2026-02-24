@@ -1156,6 +1156,77 @@ func main() {
 		c.JSON(http.StatusOK, messages)
 	})
 
+	// Get Friend List
+	r.GET("/friends/list", authMiddleware, func(c *gin.Context) {
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		var friendships []map[string]interface{}
+		_, err := client.From("friendships").
+			Select("*, sender:profiles!sender_id(username, display_name, avatar_url), receiver:profiles!receiver_id(username, display_name, avatar_url)", "", false).
+			Eq("status", "accepted").
+			Or(fmt.Sprintf("sender_id.eq.%s,receiver_id.eq.%s", supabaseUser.ID.String(), supabaseUser.ID.String()), "").
+			ExecuteTo(&friendships)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch friends"})
+			return
+		}
+
+		friends := make([]map[string]interface{}, 0)
+		for _, f := range friendships {
+			sender := f["sender"].(map[string]interface{})
+			receiver := f["receiver"].(map[string]interface{})
+
+			if f["sender_id"].(string) != supabaseUser.ID.String() {
+				sender["friendship_id"] = f["id"]
+				friends = append(friends, sender)
+			} else {
+				receiver["friendship_id"] = f["id"]
+				friends = append(friends, receiver)
+			}
+		}
+
+		c.JSON(http.StatusOK, friends)
+	})
+
+	// Unfriend
+	r.DELETE("/friends/:id", authMiddleware, func(c *gin.Context) {
+		friendshipID := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		// Verification: Ensure the friendship belongs to the user
+		var friendship map[string]interface{}
+		_, err := client.From("friendships").
+			Select("*", "", false).
+			Eq("id", friendshipID).
+			Single().
+			ExecuteTo(&friendship)
+
+		if err != nil || friendship == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Friendship not found"})
+			return
+		}
+
+		if friendship["sender_id"].(string) != supabaseUser.ID.String() && friendship["receiver_id"].(string) != supabaseUser.ID.String() {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		_, _, err = client.From("friendships").
+			Delete("", "").
+			Eq("id", friendshipID).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unfriend"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "unfriended"})
+	})
+
 	// Update Profile: Set bio, display name, etc. (Can be used for setup)
 	r.PUT("/profile", authMiddleware, func(c *gin.Context) {
 		var body struct {
