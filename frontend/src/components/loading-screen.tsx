@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquareQuote } from 'lucide-react';
 
 export function LoadingScreen() {
     return (
@@ -38,7 +38,7 @@ export function LoadingScreen() {
                     />
 
                     <div className="w-16 h-16 bg-white text-black rounded-2xl flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.2)] relative z-10">
-                        <MessageSquare className="w-8 h-8 fill-current" />
+                        <MessageSquareQuote className="w-8 h-8 text-black" />
                     </div>
                 </motion.div>
 
@@ -49,7 +49,7 @@ export function LoadingScreen() {
                     transition={{ delay: 1.2, duration: 1 }}
                     className="mt-8 flex flex-col items-center gap-2"
                 >
-                    <span className="text-white font-bold tracking-[0.3em] uppercase text-[10px] ml-[0.3em]">
+                    <span className="text-xl font-black tracking-tighter text-white uppercase italic">
                         Replied
                     </span>
 

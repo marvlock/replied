@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { MessageSquare, ArrowRight } from 'lucide-react';
+import { MessageSquareQuote, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
@@ -46,12 +46,12 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2.5 group cursor-pointer"
+            className="flex items-center gap-2 group cursor-pointer"
           >
-            <div className="w-9 h-9 bg-white text-black rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <MessageSquare className="w-5 h-5 fill-current" />
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <MessageSquareQuote className="w-5 h-5 text-black" />
             </div>
-            <span className="font-extrabold tracking-tighter text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-stone-400">Replied</span>
+            <span className="text-xl font-black tracking-tighter text-white uppercase italic">Replied</span>
           </motion.div>
 
           <motion.div
@@ -172,11 +172,11 @@ export default function Home() {
 
       <footer className="w-full py-20 bg-stone-950 border-t border-stone-900 mt-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center">
-          <div className="flex items-center gap-2.5 mb-8 opacity-50 grayscale hover:grayscale-0 transition-all cursor-pointer">
+          <div className="flex items-center gap-2 mb-8 opacity-50 grayscale hover:grayscale-0 transition-all cursor-pointer">
             <div className="w-7 h-7 bg-white text-black rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 fill-current" />
+              <MessageSquareQuote className="w-4 h-4" />
             </div>
-            <span className="font-bold tracking-tighter text-lg">Replied</span>
+            <span className="text-lg font-black tracking-tighter text-white uppercase italic">Replied</span>
           </div>
           <p className="text-stone-600 text-[10px] font-mono uppercase tracking-[0.4em] mb-4">
             Forging connections through curation
