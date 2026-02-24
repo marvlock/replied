@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock } from 'lucide-react';
+import { Lock, Heart, Bookmark, MessageSquare } from 'lucide-react';
 import { LoadingScreen } from '@/components/loading-screen';
 
 interface Profile {
@@ -27,6 +27,10 @@ interface Conversation {
     thread_id: string;
     sender_id?: string;
     replies: any;
+    is_liked: boolean;
+    is_bookmarked: boolean;
+    likes_count: number;
+    bookmarks_count: number;
 }
 
 export default function PublicProfileClient({ username }: { username: string }) {
@@ -50,7 +54,11 @@ export default function PublicProfileClient({ username }: { username: string }) 
                 const { data: { session } } = await supabase.auth.getSession();
                 setCurrentUserId(session?.user.id || null);
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/${username}`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/profile/${username}`, {
+                    headers: {
+                        'Authorization': `Bearer ${session?.access_token || ''}`
+                    }
+                });
                 if (response.ok) {
                     const data = await response.json();
                     setProfile(data.profile);
@@ -102,6 +110,39 @@ export default function PublicProfileClient({ username }: { username: string }) 
             toast.error('Connection error');
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleSocialAction = async (messageId: string, type: 'like' | 'bookmark', isActive: boolean) => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            toast.error('Sign in to leave a mark');
+            return;
+        }
+
+        try {
+            const method = isActive ? 'DELETE' : 'POST';
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/messages/${messageId}/${type}`, {
+                method,
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+
+            if (response.ok) {
+                setPublishedPairs(prev => prev.map(p => {
+                    if (p.id === messageId) {
+                        return {
+                            ...p,
+                            [`is_${type}`]: !isActive,
+                            [`${type}s_count`]: isActive
+                                ? (p[`${type}s_count` as keyof Conversation] as number) - 1
+                                : (p[`${type}s_count` as keyof Conversation] as number) + 1
+                        };
+                    }
+                    return p;
+                }));
+            }
+        } catch {
+            toast.error('Connection error');
         }
     };
 
@@ -240,21 +281,19 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="text-center text-stone-700 italic font-serif"
+                                    key="no-content"
                                 >
                                     No conversations public yet.
                                 </motion.p>
                             ) : (
                                 (() => {
-                                    // Group messages by thread_id
                                     const threads: Record<string, Conversation[]> = {};
                                     publishedPairs.forEach(pair => {
                                         if (!threads[pair.thread_id]) threads[pair.thread_id] = [];
                                         threads[pair.thread_id].push(pair);
                                     });
 
-                                    // Sort each thread by created_at ascending for natural conversation flow
                                     return Object.entries(threads).sort((a, b) => {
-                                        // Sort threads by the latest message in each thread DESC
                                         const latestA = new Date(Math.max(...a[1].map(m => new Date(m.created_at).getTime()))).getTime();
                                         const latestB = new Date(Math.max(...b[1].map(m => new Date(m.created_at).getTime()))).getTime();
                                         return latestB - latestA;
@@ -296,9 +335,25 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                                 </div>
                                                                 <div className="p-8 rounded-[32px] rounded-br-none bg-gradient-to-br from-stone-800 via-stone-900 to-black text-white leading-relaxed shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif text-lg border border-white/5 relative overflow-hidden group">
                                                                     <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
-                                                                    <div className="relative z-10">
-                                                                        {reply.content}
-                                                                    </div>
+                                                                    <div className="relative z-10">{reply.content}</div>
+                                                                </div>
+
+                                                                {/* Social Actions */}
+                                                                <div className="flex items-center justify-end gap-6 px-4 py-2">
+                                                                    <button
+                                                                        onClick={() => handleSocialAction(pair.id, 'like', pair.is_liked)}
+                                                                        className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_liked ? 'text-red-500' : 'text-stone-600 hover:text-red-400'}`}
+                                                                    >
+                                                                        <Heart className={`w-4 h-4 ${pair.is_liked ? 'fill-current' : ''}`} />
+                                                                        <span className="text-[10px] font-mono font-bold">{pair.likes_count}</span>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleSocialAction(pair.id, 'bookmark', pair.is_bookmarked)}
+                                                                        className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600 hover:text-blue-400'}`}
+                                                                    >
+                                                                        <Bookmark className={`w-4 h-4 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
+                                                                        <span className="text-[10px] font-mono font-bold">{pair.bookmarks_count}</span>
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         );
@@ -306,7 +361,7 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                 </div>
                                             ))}
 
-                                            {/* Ask Follow-up Button (Only for original sender) */}
+                                            {/* Ask Follow-up Button */}
                                             {messages[0].sender_id === currentUserId && (
                                                 <div className="flex justify-start px-2">
                                                     <Button

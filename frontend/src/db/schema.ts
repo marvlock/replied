@@ -39,3 +39,17 @@ export const friendships = pgTable("friendships", {
     status: text("status", { enum: ["pending", "accepted"] }).default("pending").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const likes = pgTable("likes", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
+    messageId: uuid("message_id").references(() => messages.id, { onDelete: 'cascade' }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const bookmarks = pgTable("bookmarks", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
+    messageId: uuid("message_id").references(() => messages.id, { onDelete: 'cascade' }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});

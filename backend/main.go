@@ -538,11 +538,47 @@ func main() {
 
 		var messages []interface{}
 		_, err = client.From("messages").
-			Select("id, content, created_at, thread_id, sender_id, replies(content, created_at)", "exact", false).
+			Select("id, content, created_at, thread_id, sender_id, replies(content, created_at), likes(count), bookmarks(count)", "exact", false).
 			Eq("receiver_id", profile.ID).
 			Eq("status", "replied").
 			Order("created_at", &postgrest.OrderOpts{Ascending: false}).
 			ExecuteTo(&messages)
+
+		if err != nil {
+			log.Printf("Supabase error fetching profile messages: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch messages"})
+			return
+		}
+
+		// Optional: Fetch user's own likes/bookmarks if logged in
+		userLikes := make(map[string]bool)
+		userBookmarks := make(map[string]bool)
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			token := authHeader[len("Bearer "):]
+			userResponse, err := client.Auth.WithToken(token).GetUser()
+			if err == nil {
+				uid := userResponse.User.ID.String()
+
+				// Fetch user likes for these messages
+				var likesData []struct {
+					MessageID string `json:"message_id"`
+				}
+				client.From("likes").Select("message_id", "", false).Eq("user_id", uid).ExecuteTo(&likesData)
+				for _, l := range likesData {
+					userLikes[l.MessageID] = true
+				}
+
+				// Fetch user bookmarks for these messages
+				var bookmarksData []struct {
+					MessageID string `json:"message_id"`
+				}
+				client.From("bookmarks").Select("message_id", "", false).Eq("user_id", uid).ExecuteTo(&bookmarksData)
+				for _, b := range bookmarksData {
+					userBookmarks[b.MessageID] = true
+				}
+			}
+		}
 
 		// Decrypt public conversations
 		for i, m := range messages {
@@ -553,17 +589,52 @@ func main() {
 				}
 			}
 
-			if replies, ok := msgMap["replies"].([]interface{}); ok {
-				for j, r := range replies {
-					replyMap := r.(map[string]interface{})
-					if rContent, ok := replyMap["content"].(string); ok {
-						if dec, err := decrypt(rContent); err == nil {
-							replyMap["content"] = dec
+			if repliesVal, ok := msgMap["replies"]; ok && repliesVal != nil {
+				if repliesList, ok := repliesVal.([]interface{}); ok {
+					for j, r := range repliesList {
+						if rMap, ok := r.(map[string]interface{}); ok {
+							if rContent, ok := rMap["content"].(string); ok {
+								if dec, err := decrypt(rContent); err == nil {
+									rMap["content"] = dec
+								} else {
+									log.Printf("Failed to decrypt reply content: %v", err)
+								}
+							}
+							repliesList[j] = rMap
 						}
 					}
-					replies[j] = replyMap
+					msgMap["replies"] = repliesList
+				} else if rMap, ok := repliesVal.(map[string]interface{}); ok {
+					if rContent, ok := rMap["content"].(string); ok {
+						if dec, err := decrypt(rContent); err == nil {
+							rMap["content"] = dec
+						} else {
+							log.Printf("Failed to decrypt single reply content: %v", err)
+						}
+					}
+					msgMap["replies"] = rMap
 				}
 			}
+			msgMap["is_liked"] = userLikes[msgMap["id"].(string)]
+			msgMap["is_bookmarked"] = userBookmarks[msgMap["id"].(string)]
+
+			// Extract counts
+			if lVal, ok := msgMap["likes"].([]interface{}); ok && len(lVal) > 0 {
+				if lMap, ok := lVal[0].(map[string]interface{}); ok {
+					msgMap["likes_count"] = lMap["count"]
+				}
+			} else {
+				msgMap["likes_count"] = 0
+			}
+
+			if bVal, ok := msgMap["bookmarks"].([]interface{}); ok && len(bVal) > 0 {
+				if bMap, ok := bVal[0].(map[string]interface{}); ok {
+					msgMap["bookmarks_count"] = bMap["count"]
+				}
+			} else {
+				msgMap["bookmarks_count"] = 0
+			}
+
 			messages[i] = msgMap
 		}
 
@@ -595,6 +666,84 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"status": "reported"})
+	})
+
+	// Like Message
+	r.POST("/messages/:id/like", authMiddleware, func(c *gin.Context) {
+		messageID := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err := client.From("likes").
+			Insert(map[string]interface{}{
+				"message_id": messageID,
+				"user_id":    supabaseUser.ID.String(),
+			}, false, "", "", "").
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "liked"})
+	})
+
+	// Unlike Message
+	r.DELETE("/messages/:id/like", authMiddleware, func(c *gin.Context) {
+		messageID := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err := client.From("likes").
+			Delete("", "").
+			Eq("message_id", messageID).
+			Eq("user_id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unlike"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "unliked"})
+	})
+
+	// Bookmark Message
+	r.POST("/messages/:id/bookmark", authMiddleware, func(c *gin.Context) {
+		messageID := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err := client.From("bookmarks").
+			Insert(map[string]interface{}{
+				"message_id": messageID,
+				"user_id":    supabaseUser.ID.String(),
+			}, false, "", "", "").
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to bookmark"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "bookmarked"})
+	})
+
+	// Remove Bookmark
+	r.DELETE("/messages/:id/bookmark", authMiddleware, func(c *gin.Context) {
+		messageID := c.Param("id")
+		user, _ := c.Get("user")
+		supabaseUser := user.(types.User)
+
+		_, _, err := client.From("bookmarks").
+			Delete("", "").
+			Eq("message_id", messageID).
+			Eq("user_id", supabaseUser.ID.String()).
+			Execute()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove bookmark"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "bookmark_removed"})
 	})
 	// Archive Message (Discard)
 	r.POST("/messages/:id/archive", authMiddleware, func(c *gin.Context) {
