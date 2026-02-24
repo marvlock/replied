@@ -219,7 +219,7 @@ export default function SettingsPage() {
                         <CardContent className="space-y-4">
                             <div className="flex gap-2">
                                 <div className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-400 font-mono overflow-hidden whitespace-nowrap">
-                                    {typeof window !== 'undefined' ? `${window.location.host}/${formData.username}` : ''}
+                                    {typeof window !== 'undefined' ? `${window.location.origin.replace(/^https?:\/\//, '')}/${formData.username}` : ''}
                                 </div>
                                 <Button
                                     variant="outline"
@@ -242,7 +242,7 @@ export default function SettingsPage() {
                                         <div className="flex flex-col items-center justify-center p-8 space-y-6">
                                             <div className="p-4 bg-white rounded-2xl">
                                                 <Image
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.host}/${formData.username}` : '')}`}
+                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/${formData.username}` : '')}`}
                                                     alt="QR Code"
                                                     width={192}
                                                     height={192}
