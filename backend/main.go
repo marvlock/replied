@@ -1116,7 +1116,7 @@ func main() {
 
 		var friendships []map[string]interface{}
 		_, err := client.From("friendships").
-			Select("*, sender:profiles!sender_id(username, display_name, avatar_url), receiver:profiles!receiver_id(username, display_name, avatar_url)", "", false).
+			Select("*, sender:profiles!sender_id(id, username, display_name, avatar_url), receiver:profiles!receiver_id(id, username, display_name, avatar_url)", "", false).
 			Eq("status", "accepted").
 			Or(fmt.Sprintf("sender_id.eq.%s,receiver_id.eq.%s", supabaseUser.ID.String(), supabaseUser.ID.String()), "").
 			ExecuteTo(&friendships)
