@@ -338,7 +338,6 @@ export default function InboxPage() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">Replied</h1>
-                            <p className="text-stone-500 text-[10px] font-mono uppercase tracking-[0.2em]">Private Hub</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -823,7 +822,7 @@ export default function InboxPage() {
                                         </CardHeader>
                                         <CardContent className="px-8 pb-8 pt-0 mt-auto">
                                             <Link href="/friends">
-                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl bg-stone-900/40 text-stone-400 hover:bg-white hover:text-black hover:border-white transition-all font-bold h-12">
+                                                <Button className="w-full rounded-2xl bg-white text-black hover:bg-stone-200 transition-all font-bold h-12 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
                                                     Manage Friends
                                                 </Button>
                                             </Link>
@@ -860,7 +859,7 @@ export default function InboxPage() {
                                         </CardHeader>
                                         <CardContent className="px-8 pb-8 pt-0 mt-auto">
                                             <Link href="/settings">
-                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl bg-stone-900/40 text-stone-400 hover:bg-white hover:text-black hover:border-white transition-all font-bold h-12">
+                                                <Button className="w-full rounded-2xl bg-white text-black hover:bg-stone-200 transition-all font-bold h-12 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
                                                     Detailed Settings
                                                 </Button>
                                             </Link>
