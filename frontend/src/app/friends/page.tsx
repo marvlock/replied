@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, UserMinus, Check, X, Search, Users, Activity, Clock, MessageSquare, ArrowLeft } from 'lucide-react';
+import { UserPlus, UserMinus, Check, X, Search, Users, Activity, Clock, MessageSquare, ArrowLeft, Inbox as InboxIcon, History, Bookmark, Heart, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/loading-screen';
 import Link from 'next/link';
@@ -24,6 +24,15 @@ export default function FriendsPage() {
         if (activeTab === 'list') fetchFriendsList();
         if (activeTab === 'requests') fetchRequests();
     }, [activeTab]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (activeTab === 'search') {
+                handleSearch();
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery, activeTab]);
 
     const fetchFriendsList = async () => {
         setLoading(true);
@@ -56,7 +65,10 @@ export default function FriendsPage() {
     };
 
     const handleSearch = async () => {
-        if (searchQuery.length < 2) return;
+        if (searchQuery.length < 2) {
+            setSearchResults([]);
+            return;
+        }
         setSearching(true);
         const { data: { session } } = await supabase.auth.getSession();
         try {
@@ -129,7 +141,7 @@ export default function FriendsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
+        <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8 pb-32 md:pb-8">
             <div className="max-w-4xl mx-auto space-y-8">
                 <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-stone-800 pb-8">
                     <div className="space-y-4">
@@ -291,21 +303,28 @@ export default function FriendsPage() {
                                 exit={{ opacity: 0, y: -10 }}
                                 className="max-w-md mx-auto space-y-6"
                             >
-                                <div className="flex gap-2">
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 group-focus-within:text-white transition-colors">
+                                        {searching ? (
+                                            <div className="w-4 h-4 border-2 border-stone-500 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <Search className="w-4 h-4" />
+                                        )}
+                                    </div>
                                     <Input
                                         placeholder="Search by username..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                        className="h-12 bg-stone-900 border-stone-800 rounded-xl"
+                                        className="h-14 pl-12 pr-12 bg-stone-900 border-stone-800 rounded-2xl focus:ring-2 focus:ring-white/10 transition-all font-medium placeholder:text-stone-600"
                                     />
-                                    <Button
-                                        onClick={handleSearch}
-                                        disabled={searching}
-                                        className="h-12 px-6 rounded-xl bg-white text-black font-bold"
-                                    >
-                                        {searching ? '...' : 'Search'}
-                                    </Button>
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-white transition-colors p-1"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="space-y-3">
@@ -341,6 +360,39 @@ export default function FriendsPage() {
                         )}
                     </AnimatePresence>
                 </main>
+                {/* Mobile Navigation (Bottom Bar - iOS style) */}
+                <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe-area-inset-bottom">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl border-t border-white/5" />
+                    <nav className="relative flex items-center justify-around px-2 py-3">
+                        {[
+                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" />, href: '/inbox?tab=inbox' },
+                            { id: 'ledger', label: 'Ledger', icon: <History className="w-5 h-5" />, href: '/inbox?tab=history' },
+                            { id: 'feed', label: 'Feed', icon: <Activity className="w-5 h-5" />, href: '/inbox?tab=feed' },
+                            { id: 'saved', label: 'Saved', icon: <Bookmark className="w-5 h-5" />, href: '/inbox?tab=bookmarks' },
+                            { id: 'liked', label: 'Liked', icon: <Heart className="w-5 h-5" />, href: '/inbox?tab=likes' },
+                            { id: 'account', label: 'Account', icon: <User className="w-5 h-5" />, href: '/inbox?tab=account' },
+                        ].map((tab) => (
+                            <Link
+                                key={tab.id}
+                                href={tab.href}
+                                className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${tab.id === 'account' ? 'text-white' : 'text-stone-500'}`}
+                            >
+                                <div className={`p-1 rounded-lg transition-all ${tab.id === 'account' ? 'scale-110' : 'scale-100'}`}>
+                                    {tab.icon}
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-wider transition-all ${tab.id === 'account' ? 'opacity-100' : 'opacity-60'}`}>
+                                    {tab.label}
+                                </span>
+                                {tab.id === 'account' && (
+                                    <motion.div
+                                        layoutId="mobile-indicator"
+                                        className="w-1 h-1 rounded-full bg-white absolute -bottom-1"
+                                    />
+                                )}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ interface Message {
     };
 }
 
-export default function InboxPage() {
+function InboxPage() {
     const { user, hasUsername, signOut, loading: authLoading } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
@@ -45,7 +45,9 @@ export default function InboxPage() {
     const [replyContent, setReplyContent] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
-    const [view, setView] = useState<'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes' | 'account'>('inbox');
+    const searchParams = useSearchParams();
+    const initialView = (searchParams.get('tab') as any) || 'inbox';
+    const [view, setView] = useState<'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes' | 'account'>(initialView);
     const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
     const [feedMessages, setFeedMessages] = useState<Message[]>([]);
     const [bookmarkMessages, setBookmarkMessages] = useState<Message[]>([]);
@@ -54,6 +56,13 @@ export default function InboxPage() {
     const [userProfile, setUserProfile] = useState<any>(null);
     const [archiving, setArchiving] = useState<string | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab && ['inbox', 'history', 'feed', 'bookmarks', 'likes', 'account'].includes(tab)) {
+            setView(tab as any);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -329,7 +338,7 @@ export default function InboxPage() {
     );
 
     return (
-        <div className="min-h-screen bg-black p-4 md:p-8">
+        <div className="min-h-screen bg-black p-4 md:p-8 pb-32 md:pb-8">
             <div className="max-w-4xl mx-auto">
                 <header className="flex items-center justify-between border-b border-stone-800 pb-6 mb-8 mt-4">
                     <div className="flex items-center gap-3">
@@ -352,7 +361,8 @@ export default function InboxPage() {
                     </div>
                 </header>
 
-                <div className="flex flex-wrap gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800 mb-8 overflow-x-auto max-w-full">
+                {/* Desktop Navigation (Top) */}
+                <div className="hidden md:flex flex-wrap gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800 mb-8 overflow-x-auto max-w-full">
                     {[
                         { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-4 h-4" /> },
                         { id: 'history', label: 'Ledger', icon: <History className="w-4 h-4" /> },
@@ -370,6 +380,40 @@ export default function InboxPage() {
                             {tab.label}
                         </button>
                     ))}
+                </div>
+
+                {/* Mobile Navigation (Bottom Bar - iOS style) */}
+                <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe-area-inset-bottom">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl border-t border-white/5" />
+                    <nav className="relative flex items-center justify-around px-2 py-3">
+                        {[
+                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" /> },
+                            { id: 'history', label: 'Ledger', icon: <History className="w-5 h-5" /> },
+                            { id: 'feed', label: 'Feed', icon: <Activity className="w-5 h-5" /> },
+                            { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-5 h-5" /> },
+                            { id: 'likes', label: 'Liked', icon: <Heart className="w-5 h-5" /> },
+                            { id: 'account', label: 'Account', icon: <User className="w-5 h-5" /> },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setView(tab.id as any)}
+                                className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${view === tab.id ? 'text-white' : 'text-stone-500'}`}
+                            >
+                                <div className={`p-1 rounded-lg transition-all ${view === tab.id ? 'scale-110' : 'scale-100'}`}>
+                                    {tab.icon}
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-wider transition-all ${view === tab.id ? 'opacity-100' : 'opacity-60'}`}>
+                                    {tab.label}
+                                </span>
+                                {view === tab.id && (
+                                    <motion.div
+                                        layoutId="mobile-indicator"
+                                        className="w-1 h-1 rounded-full bg-white absolute -bottom-1"
+                                    />
+                                )}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
 
                 <div className="grid gap-6">
@@ -872,5 +916,14 @@ export default function InboxPage() {
                 </div >
             </div >
         </div >
+    );
+}
+import { Suspense } from 'react';
+
+export default function SuspenseInboxPage() {
+    return (
+        <Suspense fallback={<LoadingScreen />}>
+            <InboxPage />
+        </Suspense>
     );
 }
