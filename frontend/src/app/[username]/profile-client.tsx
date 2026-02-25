@@ -352,17 +352,34 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                                     <div className="flex items-center justify-end gap-6 px-4 py-2">
                                                                         <button
                                                                             onClick={() => handleSocialAction(pair.id, 'like', pair.is_liked)}
-                                                                            className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_liked ? 'text-red-500' : 'text-stone-600 hover:text-red-400'}`}
+                                                                            className="flex items-center gap-1.5 group transition-all"
                                                                         >
-                                                                            <Heart className={`w-4 h-4 ${pair.is_liked ? 'fill-current' : ''}`} />
-                                                                            <span className="text-[10px] font-mono font-bold">{pair.likes_count}</span>
+                                                                            <motion.div
+                                                                                animate={pair.is_liked ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                                                                                transition={{ duration: 0.3 }}
+                                                                                className={`p-1.5 rounded-full transition-colors ${pair.is_liked ? 'bg-red-500/10 text-red-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-red-400/80'}`}
+                                                                            >
+                                                                                <Heart className={`w-4 h-4 transition-all duration-300 ${pair.is_liked ? 'fill-current' : ''}`} />
+                                                                            </motion.div>
+                                                                            <span className={`text-[10px] font-mono font-bold transition-colors ${pair.is_liked ? 'text-red-500' : 'text-stone-600'}`}>
+                                                                                {pair.likes_count}
+                                                                            </span>
                                                                         </button>
+
                                                                         <button
                                                                             onClick={() => handleSocialAction(pair.id, 'bookmark', pair.is_bookmarked)}
-                                                                            className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600 hover:text-blue-400'}`}
+                                                                            className="flex items-center gap-1.5 group transition-all"
                                                                         >
-                                                                            <Bookmark className={`w-4 h-4 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
-                                                                            <span className="text-[10px] font-mono font-bold">{pair.bookmarks_count}</span>
+                                                                            <motion.div
+                                                                                animate={pair.is_bookmarked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                                                                                transition={{ duration: 0.3 }}
+                                                                                className={`p-1.5 rounded-full transition-colors ${pair.is_bookmarked ? 'bg-blue-500/10 text-blue-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-blue-400/80'}`}
+                                                                            >
+                                                                                <Bookmark className={`w-4 h-4 transition-all duration-300 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
+                                                                            </motion.div>
+                                                                            <span className={`text-[10px] font-mono font-bold transition-colors ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600'}`}>
+                                                                                {pair.bookmarks_count}
+                                                                            </span>
                                                                         </button>
                                                                     </div>
                                                                 )}
