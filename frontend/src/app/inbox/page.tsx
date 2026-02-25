@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users, Bookmark, Heart, Activity, Clock, MessageSquare } from 'lucide-react';
+import { LogOut, Inbox as InboxIcon, MessageSquareQuote, SendHorizontal, Settings, Trash2, AlertTriangle, History, Archive, CheckCircle2, XCircle, Users, Bookmark, Heart, Activity, Clock, MessageSquare, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
@@ -45,11 +45,13 @@ export default function InboxPage() {
     const [replyContent, setReplyContent] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
-    const [view, setView] = useState<'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes'>('inbox');
+    const [view, setView] = useState<'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes' | 'account'>('inbox');
     const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
     const [feedMessages, setFeedMessages] = useState<Message[]>([]);
     const [bookmarkMessages, setBookmarkMessages] = useState<Message[]>([]);
     const [likedMessages, setLikedMessages] = useState<Message[]>([]);
+    const [friends, setFriends] = useState<any[]>([]);
+    const [userProfile, setUserProfile] = useState<any>(null);
     const [archiving, setArchiving] = useState<string | null>(null);
     const router = useRouter();
 
@@ -71,6 +73,8 @@ export default function InboxPage() {
         fetchFeed();
         fetchBookmarks();
         fetchLikes();
+        fetchFriends();
+        fetchUserProfile();
 
         // Subscribe to real-time updates for new messages
         const channel = supabase
@@ -263,6 +267,32 @@ export default function InboxPage() {
         }
     };
 
+    const fetchFriends = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/friends/list`, {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setFriends(data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching friends:', err);
+        }
+    };
+
+    const fetchUserProfile = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+        if (data) setUserProfile(data);
+    };
+
     const handleDelete = async (messageId: string) => {
         setMessageToDelete(null);
 
@@ -309,48 +339,44 @@ export default function InboxPage() {
                             </div>
                             <span className="text-xl font-black tracking-tighter text-white uppercase italic">Replied</span>
                         </div>
-                        <div className="hidden sm:flex items-center gap-2">
-                            <Link href="/friends">
-                                <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
-                                    <Users className="w-4 h-4 mr-2" />
-                                    Friends
-                                </Button>
-                            </Link>
+                        <div className="flex items-center gap-2">
                             <Link href="/settings">
-                                <Button variant="ghost" size="sm" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Settings
+                                <Button variant="ghost" size="icon" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl h-10 w-10">
+                                    <Settings className="w-5 h-5" />
                                 </Button>
                             </Link>
-                            <Button variant="ghost" size="sm" onClick={signOut} className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl px-4">
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Sign Out
+                            <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out" className="text-stone-500 hover:text-red-500 border border-stone-800/50 rounded-xl h-10 w-10">
+                                <LogOut className="w-5 h-5" />
                             </Button>
                         </div>
                     </div>
 
                     <div className="flex justify-center px-4">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes')} className="bg-stone-900/50 p-1.5 rounded-[22px] w-full max-w-[640px] border border-white/5 backdrop-blur-md">
-                            <TabsList className="bg-transparent border-none w-full grid grid-cols-5 h-11">
+                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes' | 'account')} className="bg-stone-900/50 p-1.5 rounded-[22px] w-full max-w-[700px] border border-white/5 backdrop-blur-md">
+                            <TabsList className="bg-transparent border-none w-full grid grid-cols-6 h-11">
                                 <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
                                     <InboxIcon className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Inbox</span>
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Inbox</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
                                     <History className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Ledger</span>
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Ledger</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="feed" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
                                     <Activity className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Feed</span>
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Feed</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
                                     <Bookmark className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Saved</span>
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Saved</span>
                                 </TabsTrigger>
                                 <TabsTrigger value="likes" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
                                     <Heart className="w-3.5 h-3.5" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Liked</span>
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Liked</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="account" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
+                                    <User className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Account</span>
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -679,7 +705,7 @@ export default function InboxPage() {
                                     ))}
                                 </div>
                             )
-                        ) : (
+                        ) : view === 'likes' ? (
                             likedMessages.length === 0 ? (
                                 <motion.div
                                     key="empty-likes"
@@ -740,6 +766,123 @@ export default function InboxPage() {
                                     ))}
                                 </div>
                             )
+                        ) : (
+                            <motion.div
+                                key="account-view"
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                className="grid gap-8"
+                            >
+                                {/* Account Identity Header Preview */}
+                                <div className="p-8 rounded-[32px] bg-stone-900/20 border border-white/5 backdrop-blur-sm flex flex-col sm:flex-row items-center gap-6">
+                                    <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-800 border-2 border-stone-700 flex-shrink-0">
+                                        {userProfile?.avatar_url ? (
+                                            <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-2xl font-black text-stone-500">
+                                                {userProfile?.username?.[0]?.toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-center sm:text-left flex-1">
+                                        <h2 className="text-2xl font-black text-white italic tracking-tight">@{userProfile?.username}</h2>
+                                        <p className="text-stone-500 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">{userProfile?.display_name || 'Anonymous User'}</p>
+                                        <p className="text-stone-400 text-sm mt-3 font-serif italic line-clamp-2 max-w-xl">{userProfile?.bio || 'No bio yet. Define your curation style in settings.'}</p>
+                                    </div>
+                                    <Link href="/settings">
+                                        <Button className="rounded-xl bg-white text-black hover:bg-stone-200 font-bold px-6 h-11">
+                                            Edit Identity
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Friends Preview Card */}
+                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden group hover:border-stone-700 transition-all">
+                                        <CardHeader className="p-8 pb-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                                        <Users className="w-5 h-5 text-blue-500" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-lg font-bold">Connections</CardTitle>
+                                                        <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">{friends.length} Active Friends</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="px-8 pb-8 pt-4">
+                                            <div className="space-y-4 mb-8">
+                                                {friends.length === 0 ? (
+                                                    <p className="text-stone-600 text-sm italic py-4">Your network is empty. Find creators to see their feed.</p>
+                                                ) : (
+                                                    <div className="flex -space-x-3 overflow-hidden py-2">
+                                                        {friends.slice(0, 5).map((friend, i) => (
+                                                            <div key={i} className="inline-block h-10 w-10 rounded-full bg-stone-800 border-2 border-stone-900 overflow-hidden" title={friend.username}>
+                                                                {friend.avatar_url ? (
+                                                                    <img src={friend.avatar_url} className="h-full w-full object-cover" />
+                                                                ) : (
+                                                                    <div className="h-full w-full flex items-center justify-center text-xs text-stone-500 font-bold">
+                                                                        {friend.username?.[0]?.toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        {friends.length > 5 && (
+                                                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-stone-800 border-2 border-stone-900 text-[10px] font-bold text-stone-400">
+                                                                +{friends.length - 5}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Link href="/friends">
+                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl group-hover:bg-white group-hover:text-black transition-all">
+                                                    Manage Friends
+                                                </Button>
+                                            </Link>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Settings Preview Card */}
+                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden group hover:border-stone-700 transition-all">
+                                        <CardHeader className="p-8 pb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                                                    <Settings className="w-5 h-5 text-purple-500" />
+                                                </div>
+                                                <div>
+                                                    <CardTitle className="text-lg font-bold">Preferences</CardTitle>
+                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">Global Settings</p>
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="px-8 pb-8 pt-4">
+                                            <div className="space-y-4 mb-8">
+                                                <div className="flex items-center justify-between text-sm py-2 border-b border-stone-800/50">
+                                                    <span className="text-stone-500">Inbox Status</span>
+                                                    <span className={userProfile?.is_paused ? "text-red-500 font-bold uppercase text-[10px]" : "text-green-500 font-bold uppercase text-[10px]"}>
+                                                        {userProfile?.is_paused ? 'Paused' : 'Active'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm py-2">
+                                                    <span className="text-stone-500">Filters</span>
+                                                    <span className="text-white font-mono text-[10px]">
+                                                        {userProfile?.blocked_phrases?.length || 0} BLOCKED
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Link href="/settings">
+                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl group-hover:bg-white group-hover:text-black transition-all">
+                                                    Detailed Settings
+                                                </Button>
+                                            </Link>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div >
