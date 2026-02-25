@@ -808,8 +808,11 @@ function InboxPage() {
                                 className="grid gap-8"
                             >
                                 {/* Account Identity Header Preview */}
-                                <div className="p-8 rounded-[32px] bg-stone-900/20 border border-white/5 backdrop-blur-sm flex flex-col sm:flex-row items-center gap-6">
-                                    <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-800 border-2 border-stone-700 flex-shrink-0">
+                                <Link
+                                    href={`/${userProfile?.username}`}
+                                    className="p-8 rounded-[32px] bg-stone-900/20 border border-white/5 backdrop-blur-sm flex flex-col sm:flex-row items-center gap-6 hover:bg-stone-900/40 hover:border-white/10 transition-all group cursor-pointer"
+                                >
+                                    <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-800 border-2 border-stone-700 flex-shrink-0 group-hover:border-white/20 transition-all group-hover:scale-105 transform">
                                         {userProfile?.avatar_url ? (
                                             <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
                                         ) : (
@@ -819,11 +822,13 @@ function InboxPage() {
                                         )}
                                     </div>
                                     <div className="text-center sm:text-left flex-1">
-                                        <h2 className="text-2xl font-black text-white italic tracking-tight">@{userProfile?.username}</h2>
+                                        <div className="flex items-center justify-center sm:justify-start gap-2">
+                                            <h2 className="text-2xl font-black text-white italic tracking-tight group-hover:text-primary transition-colors">@{userProfile?.username}</h2>
+                                        </div>
                                         <p className="text-stone-500 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">{userProfile?.display_name || 'Anonymous User'}</p>
                                         <p className="text-stone-400 text-sm mt-3 font-serif italic line-clamp-2 max-w-xl">{userProfile?.bio || 'No bio yet. Define your curation style in settings.'}</p>
                                     </div>
-                                </div>
+                                </Link>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Friends Preview Card */}
