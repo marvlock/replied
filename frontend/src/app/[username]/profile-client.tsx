@@ -120,6 +120,21 @@ export default function PublicProfileClient({ username }: { username: string }) 
             return;
         }
 
+        // Optimistic Update
+        const previousPairs = [...publishedPairs];
+        setPublishedPairs(prev => prev.map(p => {
+            if (p.id === messageId) {
+                return {
+                    ...p,
+                    [`is_${type}`]: !isActive,
+                    [`${type}s_count`]: isActive
+                        ? (p[`${type}s_count` as keyof Conversation] as number) - 1
+                        : (p[`${type}s_count` as keyof Conversation] as number) + 1
+                };
+            }
+            return p;
+        }));
+
         try {
             const method = isActive ? 'DELETE' : 'POST';
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080'}/messages/${messageId}/${type}`, {
@@ -127,21 +142,15 @@ export default function PublicProfileClient({ username }: { username: string }) 
                 headers: { 'Authorization': `Bearer ${session.access_token}` }
             });
 
-            if (response.ok) {
-                setPublishedPairs(prev => prev.map(p => {
-                    if (p.id === messageId) {
-                        return {
-                            ...p,
-                            [`is_${type}`]: !isActive,
-                            [`${type}s_count`]: isActive
-                                ? (p[`${type}s_count` as keyof Conversation] as number) - 1
-                                : (p[`${type}s_count` as keyof Conversation] as number) + 1
-                        };
-                    }
-                    return p;
-                }));
+            if (!response.ok) {
+                // Rollback if request failed
+                setPublishedPairs(previousPairs);
+                const errData = await response.json();
+                toast.error(errData.error || `Failed to ${type}`);
             }
         } catch {
+            // Rollback on connection error
+            setPublishedPairs(previousPairs);
             toast.error('Connection error');
         }
     };
@@ -339,22 +348,24 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                                 </div>
 
                                                                 {/* Social Actions */}
-                                                                <div className="flex items-center justify-end gap-6 px-4 py-2">
-                                                                    <button
-                                                                        onClick={() => handleSocialAction(pair.id, 'like', pair.is_liked)}
-                                                                        className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_liked ? 'text-red-500' : 'text-stone-600 hover:text-red-400'}`}
-                                                                    >
-                                                                        <Heart className={`w-4 h-4 ${pair.is_liked ? 'fill-current' : ''}`} />
-                                                                        <span className="text-[10px] font-mono font-bold">{pair.likes_count}</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleSocialAction(pair.id, 'bookmark', pair.is_bookmarked)}
-                                                                        className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600 hover:text-blue-400'}`}
-                                                                    >
-                                                                        <Bookmark className={`w-4 h-4 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
-                                                                        <span className="text-[10px] font-mono font-bold">{pair.bookmarks_count}</span>
-                                                                    </button>
-                                                                </div>
+                                                                {currentUserId && (
+                                                                    <div className="flex items-center justify-end gap-6 px-4 py-2">
+                                                                        <button
+                                                                            onClick={() => handleSocialAction(pair.id, 'like', pair.is_liked)}
+                                                                            className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_liked ? 'text-red-500' : 'text-stone-600 hover:text-red-400'}`}
+                                                                        >
+                                                                            <Heart className={`w-4 h-4 ${pair.is_liked ? 'fill-current' : ''}`} />
+                                                                            <span className="text-[10px] font-mono font-bold">{pair.likes_count}</span>
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleSocialAction(pair.id, 'bookmark', pair.is_bookmarked)}
+                                                                            className={`flex items-center gap-1.5 transition-all hover:scale-110 ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600 hover:text-blue-400'}`}
+                                                                        >
+                                                                            <Bookmark className={`w-4 h-4 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
+                                                                            <span className="text-[10px] font-mono font-bold">{pair.bookmarks_count}</span>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     })()}

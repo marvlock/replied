@@ -660,6 +660,19 @@ func main() {
 		user, _ := c.Get("user")
 		supabaseUser := user.(types.User)
 
+		// Check if already liked
+		var existing []map[string]interface{}
+		client.From("likes").
+			Select("*", "exact", false).
+			Eq("message_id", messageID).
+			Eq("user_id", supabaseUser.ID.String()).
+			ExecuteTo(&existing)
+
+		if len(existing) > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Already liked"})
+			return
+		}
+
 		_, _, err := client.From("likes").
 			Insert(map[string]interface{}{
 				"message_id": messageID,
@@ -698,6 +711,19 @@ func main() {
 		messageID := c.Param("id")
 		user, _ := c.Get("user")
 		supabaseUser := user.(types.User)
+
+		// Check if already bookmarked
+		var existing []map[string]interface{}
+		client.From("bookmarks").
+			Select("*", "exact", false).
+			Eq("message_id", messageID).
+			Eq("user_id", supabaseUser.ID.String()).
+			ExecuteTo(&existing)
+
+		if len(existing) > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Already bookmarked"})
+			return
+		}
 
 		_, _, err := client.From("bookmarks").
 			Insert(map[string]interface{}{
