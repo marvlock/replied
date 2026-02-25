@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, UserMinus, Check, X, Search, Users, Activity, Clock, MessageSquare } from 'lucide-react';
+import { UserPlus, UserMinus, Check, X, Search, Users, Activity, Clock, MessageSquare, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoadingScreen } from '@/components/loading-screen';
 import Link from 'next/link';
@@ -131,10 +131,16 @@ export default function FriendsPage() {
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
-                <header className="flex items-center justify-between border-b border-stone-800 pb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tighter text-white">Friends</h1>
-                        <p className="text-stone-500 text-sm mt-1">Connect and follow your friends' activities.</p>
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-stone-800 pb-8">
+                    <div className="space-y-4">
+                        <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors text-sm w-fit">
+                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                            Back to Inbox
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">Friends</h1>
+                            <p className="text-stone-500 text-sm mt-1">Connect and follow your friends' activities.</p>
+                        </div>
                     </div>
                 </header>
 
