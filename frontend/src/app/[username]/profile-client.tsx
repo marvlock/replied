@@ -356,12 +356,12 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                                         >
                                                                             <motion.div
                                                                                 animate={pair.is_liked ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-                                                                                transition={{ duration: 0.3 }}
-                                                                                className={`p-1.5 rounded-full transition-colors ${pair.is_liked ? 'bg-red-500/10 text-red-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-red-400/80'}`}
+                                                                                transition={{ duration: 0.2 }}
+                                                                                className={`p-1.5 rounded-full ${pair.is_liked ? 'bg-red-500/10 text-red-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-red-400/80'}`}
                                                                             >
-                                                                                <Heart className={`w-4 h-4 transition-all duration-300 ${pair.is_liked ? 'fill-current' : ''}`} />
+                                                                                <Heart className={`w-4 h-4 ${pair.is_liked ? 'fill-current' : ''}`} />
                                                                             </motion.div>
-                                                                            <span className={`text-[10px] font-mono font-bold transition-colors ${pair.is_liked ? 'text-red-500' : 'text-stone-600'}`}>
+                                                                            <span className={`text-[10px] font-mono font-bold ${pair.is_liked ? 'text-red-500' : 'text-stone-600'}`}>
                                                                                 {pair.likes_count}
                                                                             </span>
                                                                         </button>
@@ -372,12 +372,12 @@ export default function PublicProfileClient({ username }: { username: string }) 
                                                                         >
                                                                             <motion.div
                                                                                 animate={pair.is_bookmarked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                                                                                transition={{ duration: 0.3 }}
-                                                                                className={`p-1.5 rounded-full transition-colors ${pair.is_bookmarked ? 'bg-blue-500/10 text-blue-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-blue-400/80'}`}
+                                                                                transition={{ duration: 0.2 }}
+                                                                                className={`p-1.5 rounded-full ${pair.is_bookmarked ? 'bg-blue-500/10 text-blue-500' : 'text-stone-600 group-hover:bg-white/5 group-hover:text-blue-400/80'}`}
                                                                             >
-                                                                                <Bookmark className={`w-4 h-4 transition-all duration-300 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
+                                                                                <Bookmark className={`w-4 h-4 ${pair.is_bookmarked ? 'fill-current' : ''}`} />
                                                                             </motion.div>
-                                                                            <span className={`text-[10px] font-mono font-bold transition-colors ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600'}`}>
+                                                                            <span className={`text-[10px] font-mono font-bold ${pair.is_bookmarked ? 'text-blue-500' : 'text-stone-600'}`}>
                                                                                 {pair.bookmarks_count}
                                                                             </span>
                                                                         </button>
