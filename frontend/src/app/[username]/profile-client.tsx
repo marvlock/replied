@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Heart, Bookmark, MessageSquare } from 'lucide-react';
+import { Lock, Heart, Bookmark, MessageSquare, Activity } from 'lucide-react';
 import { LoadingScreen } from '@/components/loading-screen';
 
 interface Profile {
@@ -214,61 +214,72 @@ export default function PublicProfileClient({ username }: { username: string }) 
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.1 }}
                     >
-                        <Card className="border-stone-800/50 bg-stone-950/40 backdrop-blur-2xl shadow-2xl overflow-hidden rounded-[32px]">
-                            <CardContent className="p-2 space-y-2">
+                        <Card className="border-stone-800/40 bg-stone-950/40 backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden rounded-[40px]">
+                            <CardContent className="p-0">
                                 {profile.is_paused ? (
-                                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-                                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
-                                            <Lock className="w-5 h-5 text-red-500" />
+                                    <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                                        <div className="w-16 h-16 rounded-3xl bg-red-500/10 flex items-center justify-center">
+                                            <Lock className="w-6 h-6 text-red-500" />
                                         </div>
                                         <div className="space-y-1">
-                                            <h3 className="text-white font-bold">Inbox Paused</h3>
+                                            <h3 className="text-xl font-bold text-white uppercase tracking-tighter italic">Inbox Paused</h3>
                                             <p className="text-stone-500 text-sm max-w-xs mx-auto">This user has temporarily paused new messages. Check back later!</p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <>
+                                    <div className="flex flex-col min-h-[320px]">
                                         <Textarea
                                             placeholder={replyingToThread ? "Type your follow-up anonymous question..." : "Ask me anything anonymously..."}
-                                            className="min-h-[180px] bg-transparent border-none focus-visible:ring-0 text-xl p-8 resize-none text-stone-200 placeholder:text-stone-800 transition-all duration-300 font-serif"
+                                            className="flex-1 bg-transparent border-none focus-visible:ring-0 text-2xl p-10 md:p-12 resize-none text-stone-100 placeholder:text-stone-800/60 transition-all font-serif italic leading-relaxed"
                                             value={message}
                                             onChange={(e) => setMessage(e.target.value)}
                                             maxLength={500}
                                         />
 
                                         {replyingToThread && (
-                                            <div className="px-8 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                                    <span className="text-[10px] font-mono text-primary uppercase tracking-widest font-black">Thread Active</span>
+                                            <div className="px-10 md:px-12 pb-4">
+                                                <div className="flex items-center justify-between p-3 rounded-2xl bg-primary/5 border border-primary/10">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                                                        <span className="text-[10px] font-mono text-primary uppercase tracking-widest font-black">Thread Active</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setReplyingToThread(null)}
+                                                        className="text-[10px] font-mono text-stone-600 hover:text-white uppercase tracking-widest font-bold underline underline-offset-4"
+                                                    >
+                                                        Cancel Follow-up
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => setReplyingToThread(null)}
-                                                    className="text-[10px] font-mono text-stone-600 hover:text-white uppercase tracking-widest font-bold underline"
-                                                >
-                                                    Cancel Follow-up
-                                                </button>
                                             </div>
                                         )}
 
-                                        <div className="flex items-center justify-between px-8 pb-6">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-mono text-stone-700 uppercase tracking-widest font-bold">
-                                                    Character Count
-                                                </span>
-                                                <span className="text-xs font-mono text-stone-500">
-                                                    {message.length} / 500
-                                                </span>
+                                        <div className="p-8 md:p-10 bg-white/[0.02] border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-[1px] bg-stone-800 hidden sm:block" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-mono text-stone-600 uppercase tracking-[0.2em] font-black">
+                                                        Length Control
+                                                    </span>
+                                                    <span className={`text-xs font-mono font-bold transition-colors ${message.length > 450 ? 'text-red-500' : 'text-stone-500'}`}>
+                                                        {message.length} <span className="text-stone-800">/</span> 500
+                                                    </span>
+                                                </div>
                                             </div>
+
                                             <Button
                                                 disabled={sending || !message.trim()}
                                                 onClick={handleSubmit}
-                                                className="bg-white text-black hover:bg-stone-200 h-14 px-10 rounded-2xl font-bold text-sm shadow-2xl transition-all active:scale-95 disabled:opacity-20"
+                                                className="w-full sm:w-auto bg-white text-black hover:bg-stone-200 h-14 px-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-[0_20px_40px_-12px_rgba(255,255,255,0.2)] transition-all active:scale-95 disabled:opacity-20 flex items-center gap-2 group"
                                             >
-                                                {sending ? 'Sending...' : 'Send Message'}
+                                                {sending ? 'Sending...' : (
+                                                    <>
+                                                        Send Message
+                                                        <Activity className="w-4 h-4 opacity-30 group-hover:opacity-100 transition-opacity" />
+                                                    </>
+                                                )}
                                             </Button>
                                         </div>
-                                    </>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
