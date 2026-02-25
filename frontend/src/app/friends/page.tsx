@@ -19,6 +19,17 @@ export default function FriendsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const init = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setCurrentUserId(session?.user.id || null);
+            fetchFriendsList();
+            fetchRequests();
+        };
+        init();
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'list') fetchFriendsList();
@@ -333,30 +344,53 @@ export default function FriendsPage() {
                                 </div>
 
                                 <div className="space-y-3">
-                                    {searchResults.map((user: any) => (
-                                        <div key={user.id} className="flex items-center gap-4 p-4 rounded-2xl bg-stone-900/50 border border-stone-800/50 hover:bg-stone-900 transition-colors">
-                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800">
-                                                {user.avatar_url ? (
-                                                    <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-stone-500">
-                                                        {user.username?.[0]?.toUpperCase()}
+                                    {searchResults.map((user: any) => {
+                                        const isMe = user.id === currentUserId;
+                                        const isFriend = friendsList.some(f => f.id === user.id);
+
+                                        return (
+                                            <div key={user.id} className="flex items-center gap-4 p-4 rounded-2xl bg-stone-900/50 border border-stone-800/50 hover:bg-stone-900 transition-colors">
+                                                <Link href={`/${user.username}`} className="flex items-center gap-4 flex-1">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-white/5">
+                                                        {user.avatar_url ? (
+                                                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center font-bold text-stone-500">
+                                                                {user.username?.[0]?.toUpperCase()}
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-white text-sm font-bold">@{user.username}</p>
+                                                        <p className="text-[10px] text-stone-500 font-mono uppercase tracking-widest">{user.display_name || 'View Profile'}</p>
+                                                    </div>
+                                                </Link>
+
+                                                {isMe ? (
+                                                    <span className="px-4 py-1.5 rounded-xl bg-white/5 text-stone-400 text-[10px] font-black uppercase tracking-widest border border-white/5">
+                                                        Me
+                                                    </span>
+                                                ) : isFriend ? (
+                                                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest border border-green-500/20">
+                                                        <Check className="w-3 h-3" />
+                                                        Added
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            sendRequest(user.id);
+                                                        }}
+                                                        className="border-stone-800 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold h-8"
+                                                    >
+                                                        Add Friend
+                                                    </Button>
                                                 )}
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-white text-sm font-bold">@{user.username}</p>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => sendRequest(user.id)}
-                                                className="border-stone-800 rounded-xl hover:bg-white hover:text-black transition-all"
-                                            >
-                                                Add Friend
-                                            </Button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {searchResults.length === 0 && searchQuery.length >= 2 && !searching && (
                                         <p className="text-center text-stone-600 text-sm italic">No users found.</p>
                                     )}
