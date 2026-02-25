@@ -143,16 +143,21 @@ export default function FriendsPage() {
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8 pb-32 md:pb-8">
             <div className="max-w-4xl mx-auto space-y-8">
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-stone-800 pb-8">
-                    <div className="space-y-4">
-                        <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors text-sm w-fit">
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            Back to Inbox
-                        </Link>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">Friends</h1>
-                            <p className="text-stone-500 text-sm mt-1">Connect and follow your friends' activities.</p>
-                        </div>
+                <header className="flex items-center gap-4 md:gap-6 border-b border-stone-800 pb-8 mb-8 mt-2">
+                    <Link href="/inbox" className="shrink-0">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-stone-900/40 border border-stone-800/50 hover:bg-white hover:text-black transition-all shadow-xl group"
+                        >
+                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-x-1 transition-transform" />
+                        </Button>
+                    </Link>
+                    <div className="flex-1">
+                        <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white uppercase italic leading-none">Friends</h1>
+                        <p className="text-stone-500 text-[10px] md:text-sm font-mono md:font-sans uppercase md:normal-case tracking-[0.2em] md:tracking-normal mt-2">
+                            Connections & Network
+                        </p>
                     </div>
                 </header>
 
