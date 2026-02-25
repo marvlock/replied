@@ -250,12 +250,20 @@ export default function SettingsPage() {
     return (
         <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
             <div className="max-w-2xl mx-auto space-y-12">
-                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <Link href="/inbox" className="group flex items-center gap-2 text-stone-500 hover:text-white transition-colors text-sm">
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Inbox
+                <header className="flex items-center gap-4 md:gap-6 mb-12 mt-2">
+                    <Link href="/inbox" className="shrink-0">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-stone-900/40 border border-stone-800/50 hover:bg-white hover:text-black transition-all shadow-xl group"
+                        >
+                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-x-1 transition-transform" />
+                        </Button>
                     </Link>
-                    <h1 className="text-xl font-bold tracking-tighter">Settings</h1>
+                    <div className="flex-1">
+                        <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-white uppercase italic leading-none">Settings</h1>
+                        <p className="text-stone-500 text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] mt-2">Account Configuration</p>
+                    </div>
                 </header>
 
                 {/* Sharing Link Card */}
