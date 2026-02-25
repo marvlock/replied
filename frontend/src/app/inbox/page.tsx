@@ -331,57 +331,47 @@ export default function InboxPage() {
     return (
         <div className="min-h-screen bg-black p-4 md:p-8">
             <div className="max-w-4xl mx-auto">
-                <header className="mb-16 space-y-8">
-                    <div className="flex items-center justify-between px-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                                <MessageSquareQuote className="w-5 h-5 text-black" />
-                            </div>
-                            <span className="text-xl font-black tracking-tighter text-white uppercase italic">Replied</span>
+                <header className="flex items-center justify-between border-b border-stone-800 pb-6 mb-8 mt-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                            <MessageSquareQuote className="w-6 h-6 text-black" />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Link href="/settings">
-                                <Button variant="ghost" size="icon" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl h-10 w-10">
-                                    <Settings className="w-5 h-5" />
-                                </Button>
-                            </Link>
-                            <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out" className="text-stone-500 hover:text-red-500 border border-stone-800/50 rounded-xl h-10 w-10">
-                                <LogOut className="w-5 h-5" />
-                            </Button>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">Replied</h1>
+                            <p className="text-stone-500 text-[10px] font-mono uppercase tracking-[0.2em]">Private Hub</p>
                         </div>
                     </div>
-
-                    <div className="flex justify-center px-4">
-                        <Tabs value={view} onValueChange={(v: string) => setView(v as 'inbox' | 'history' | 'feed' | 'bookmarks' | 'likes' | 'account')} className="bg-stone-900/50 p-1.5 rounded-[22px] w-full max-w-[700px] border border-white/5 backdrop-blur-md">
-                            <TabsList className="bg-transparent border-none w-full grid grid-cols-6 h-11">
-                                <TabsTrigger value="inbox" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <InboxIcon className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Inbox</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="history" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <History className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Ledger</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="feed" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <Activity className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Feed</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="bookmarks" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <Bookmark className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Saved</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="likes" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <Heart className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Liked</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="account" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-2xl px-2 gap-2 transition-all duration-300">
-                                    <User className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Account</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                    <div className="flex items-center gap-2">
+                        <Link href="/settings">
+                            <Button variant="ghost" size="icon" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl h-10 w-10">
+                                <Settings className="w-5 h-5" />
+                            </Button>
+                        </Link>
+                        <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out" className="text-stone-500 hover:text-red-500 border border-stone-800/50 rounded-xl h-10 w-10">
+                            <LogOut className="w-5 h-5" />
+                        </Button>
                     </div>
                 </header>
+
+                <div className="flex flex-wrap gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800 mb-8 overflow-x-auto max-w-full">
+                    {[
+                        { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-4 h-4" /> },
+                        { id: 'history', label: 'Ledger', icon: <History className="w-4 h-4" /> },
+                        { id: 'feed', label: 'Feed', icon: <Activity className="w-4 h-4" /> },
+                        { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-4 h-4" /> },
+                        { id: 'likes', label: 'Liked', icon: <Heart className="w-4 h-4" /> },
+                        { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setView(tab.id as any)}
+                            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === tab.id ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                        >
+                            {tab.icon}
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
                 <div className="grid gap-6">
                     <AnimatePresence mode="wait">
@@ -790,56 +780,50 @@ export default function InboxPage() {
                                         <p className="text-stone-500 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">{userProfile?.display_name || 'Anonymous User'}</p>
                                         <p className="text-stone-400 text-sm mt-3 font-serif italic line-clamp-2 max-w-xl">{userProfile?.bio || 'No bio yet. Define your curation style in settings.'}</p>
                                     </div>
-                                    <Link href="/settings">
-                                        <Button className="rounded-xl bg-white text-black hover:bg-stone-200 font-bold px-6 h-11">
-                                            Edit Identity
-                                        </Button>
-                                    </Link>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Friends Preview Card */}
-                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden group hover:border-stone-700 transition-all">
-                                        <CardHeader className="p-8 pb-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                                        <Users className="w-5 h-5 text-blue-500" />
-                                                    </div>
-                                                    <div>
-                                                        <CardTitle className="text-lg font-bold">Connections</CardTitle>
-                                                        <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">{friends.length} Active Friends</p>
-                                                    </div>
+                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden flex flex-col h-full">
+                                        <CardHeader className="p-8">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                                    <Users className="w-6 h-6 text-blue-500" />
+                                                </div>
+                                                <div>
+                                                    <CardTitle className="text-xl font-black italic text-white uppercase tracking-tight">Connections</CardTitle>
+                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">{friends.length} Active Friends</p>
                                                 </div>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="px-8 pb-8 pt-4">
-                                            <div className="space-y-4 mb-8">
+
+                                            <div className="min-h-[60px] flex items-center">
                                                 {friends.length === 0 ? (
-                                                    <p className="text-stone-600 text-sm italic py-4">Your network is empty. Find creators to see their feed.</p>
+                                                    <p className="text-stone-600 text-sm italic">Your network is empty. Find creators to see their feed.</p>
                                                 ) : (
                                                     <div className="flex -space-x-3 overflow-hidden py-2">
                                                         {friends.slice(0, 5).map((friend, i) => (
-                                                            <div key={i} className="inline-block h-10 w-10 rounded-full bg-stone-800 border-2 border-stone-900 overflow-hidden" title={friend.username}>
+                                                            <div key={i} className="inline-block h-12 w-12 rounded-full bg-stone-800 border-2 border-stone-950 overflow-hidden ring-4 ring-black/10" title={friend.username}>
                                                                 {friend.avatar_url ? (
                                                                     <img src={friend.avatar_url} className="h-full w-full object-cover" />
                                                                 ) : (
-                                                                    <div className="h-full w-full flex items-center justify-center text-xs text-stone-500 font-bold">
+                                                                    <div className="h-full w-full flex items-center justify-center text-xs text-stone-500 font-black">
                                                                         {friend.username?.[0]?.toUpperCase()}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         ))}
                                                         {friends.length > 5 && (
-                                                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-stone-800 border-2 border-stone-900 text-[10px] font-bold text-stone-400">
+                                                            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-stone-900 border-2 border-stone-950 text-[10px] font-black text-stone-400">
                                                                 +{friends.length - 5}
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
                                             </div>
+                                        </CardHeader>
+                                        <CardContent className="px-8 pb-8 pt-0 mt-auto">
                                             <Link href="/friends">
-                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl group-hover:bg-white group-hover:text-black transition-all">
+                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl bg-stone-900/40 text-stone-400 hover:bg-white hover:text-black hover:border-white transition-all font-bold h-12">
                                                     Manage Friends
                                                 </Button>
                                             </Link>
@@ -847,35 +831,36 @@ export default function InboxPage() {
                                     </Card>
 
                                     {/* Settings Preview Card */}
-                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden group hover:border-stone-700 transition-all">
-                                        <CardHeader className="p-8 pb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                                                    <Settings className="w-5 h-5 text-purple-500" />
+                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden flex flex-col h-full">
+                                        <CardHeader className="p-8">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                                                    <Settings className="w-6 h-6 text-purple-500" />
                                                 </div>
                                                 <div>
-                                                    <CardTitle className="text-lg font-bold">Preferences</CardTitle>
-                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">Global Settings</p>
+                                                    <CardTitle className="text-xl font-black italic text-white uppercase tracking-tight">Preferences</CardTitle>
+                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">Global Control</p>
                                                 </div>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="px-8 pb-8 pt-4">
-                                            <div className="space-y-4 mb-8">
-                                                <div className="flex items-center justify-between text-sm py-2 border-b border-stone-800/50">
-                                                    <span className="text-stone-500">Inbox Status</span>
-                                                    <span className={userProfile?.is_paused ? "text-red-500 font-bold uppercase text-[10px]" : "text-green-500 font-bold uppercase text-[10px]"}>
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between text-sm py-3 border-b border-white/5">
+                                                    <span className="text-stone-400 font-medium">Inbox Status</span>
+                                                    <span className={userProfile?.is_paused ? "text-red-500 font-black uppercase text-[10px] tracking-widest px-2 py-1 rounded bg-red-500/10" : "text-green-500 font-black uppercase text-[10px] tracking-widest px-2 py-1 rounded bg-green-500/10"}>
                                                         {userProfile?.is_paused ? 'Paused' : 'Active'}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center justify-between text-sm py-2">
-                                                    <span className="text-stone-500">Filters</span>
-                                                    <span className="text-white font-mono text-[10px]">
+                                                <div className="flex items-center justify-between text-sm py-3">
+                                                    <span className="text-stone-400 font-medium">Filters</span>
+                                                    <span className="text-white font-black text-[10px] tracking-widest px-2 py-1 rounded bg-white/5">
                                                         {userProfile?.blocked_phrases?.length || 0} BLOCKED
                                                     </span>
                                                 </div>
                                             </div>
+                                        </CardHeader>
+                                        <CardContent className="px-8 pb-8 pt-0 mt-auto">
                                             <Link href="/settings">
-                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl group-hover:bg-white group-hover:text-black transition-all">
+                                                <Button variant="outline" className="w-full border-stone-800 rounded-2xl bg-stone-900/40 text-stone-400 hover:bg-white hover:text-black hover:border-white transition-all font-bold h-12">
                                                     Detailed Settings
                                                 </Button>
                                             </Link>
