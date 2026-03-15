@@ -248,336 +248,286 @@ export default function SettingsPage() {
     if (authLoading || loading || minLoading) return <LoadingScreen />;
 
     return (
-        <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8">
-            <div className="max-w-2xl mx-auto space-y-12">
-                <header className="flex items-center gap-4 md:gap-6 mb-12 mt-2">
-                    <Link href="/inbox" className="shrink-0">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-stone-900/40 border border-stone-800/50 hover:bg-white hover:text-black transition-all shadow-xl group"
-                        >
-                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-x-1 transition-transform" />
-                        </Button>
-                    </Link>
-                    <div className="flex-1">
-                        <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-white uppercase italic leading-none">Settings</h1>
-                        <p className="text-stone-500 text-[10px] md:text-xs font-mono uppercase tracking-[0.2em] mt-2">Account Configuration</p>
+        <div className="min-h-screen bg-[#1C7BFF] text-black selection:bg-[#D4FF00] selection:text-black font-sans pb-24">
+            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-[#D4FF00] border-b-4 border-black flex items-center gap-4">
+                <Link href="/inbox" className="shrink-0">
+                    <button className="w-10 h-10 md:w-12 md:h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                </Link>
+                <div className="text-2xl font-black uppercase tracking-tighter">
+                    Settings
+                </div>
+            </nav>
+
+            <main className="pt-32 max-w-2xl mx-auto px-6 space-y-12">
+                {/* Sharing Link Block */}
+                <section className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Share2 className="w-8 h-8 fill-black" />
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Your Identity</h2>
                     </div>
-                </header>
-
-                {/* Sharing Link Card */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <Card className="bg-stone-900/30 border-stone-800 shadow-2xl">
-                        <CardHeader>
-                            <div className="flex items-center gap-2 text-primary mb-2">
-                                <Share2 className="w-4 h-4" />
-                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Your Identity</span>
+                    
+                    <div className="space-y-6">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1 bg-black text-white p-4 font-bold border-4 border-black overflow-hidden whitespace-nowrap text-lg md:text-xl">
+                                {typeof window !== 'undefined' ? `${window.location.origin.replace(/^https?:\/\//, '')}/${formData.username}` : ''}
                             </div>
-                            <CardTitle className="text-white">Sharing Link</CardTitle>
-                            <CardDescription className="text-stone-500">Share this URL on your social bios to receive messages.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex gap-2">
-                                <div className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-400 font-mono overflow-hidden whitespace-nowrap">
-                                    {typeof window !== 'undefined' ? `${window.location.origin.replace(/^https?:\/\//, '')}/${formData.username}` : ''}
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    onClick={copyLink}
-                                    className="border-stone-800 bg-transparent text-stone-400 hover:text-white rounded-xl px-4"
-                                >
-                                    {hasCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                </Button>
-
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button className="bg-white text-black hover:bg-stone-200 rounded-xl px-4">
-                                            <QrCode className="w-4 h-4" />
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="bg-stone-950 border-stone-800 text-white max-w-sm">
-                                        <DialogHeader>
-                                            <DialogTitle>Your Profile QR Code</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="flex flex-col items-center justify-center p-8 space-y-6">
-                                            <div className="p-4 bg-white rounded-2xl">
-                                                <Image
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/${formData.username}` : '')}`}
-                                                    alt="QR Code"
-                                                    width={192}
-                                                    height={192}
-                                                    unoptimized
-                                                    className="w-48 h-48"
-                                                />
-                                            </div>
-                                            <p className="text-center text-xs text-stone-500 font-mono uppercase tracking-widest">
-                                                Scan to visit @{formData.username}
-                                            </p>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        const link = `${window.location.origin}/${formData.username}`;
-                                        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝`)}&url=${encodeURIComponent(link)}`, '_blank');
-                                    }}
-                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
-                                >
-                                    <Twitter className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Share on X</span>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        const link = `${window.location.origin}/${formData.username}`;
-                                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝 ${link}`)}`, '_blank');
-                                    }}
-                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
-                                >
-                                    <MessageCircle className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">WhatsApp</span>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={copyLink}
-                                    className="border-stone-800 bg-stone-950 text-stone-400 hover:text-white hover:border-stone-600 rounded-xl gap-2 h-10 px-4 flex-1 sm:flex-none"
-                                >
-                                    <Instagram className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">IG Story</span>
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Moderation Controls */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-                    <Card className="bg-stone-900/30 border-stone-800 shadow-2xl">
-                        <CardHeader>
-                            <div className="flex items-center gap-2 text-red-500 mb-2">
-                                <Shield className="w-4 h-4" />
-                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Safety</span>
-                            </div>
-                            <CardTitle className="text-white">Moderation</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-8">
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-stone-950 border border-stone-800">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2 font-medium text-stone-200">
-                                        <Lock className="w-4 h-4 text-stone-500" />
-                                        Pause Inbox
-                                    </div>
-                                    <p className="text-xs text-stone-500">Stop receiving new messages temporarily.</p>
-                                </div>
-                                <Switch
-                                    checked={formData.is_paused}
-                                    onCheckedChange={handleTogglePause}
-                                />
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2 font-medium text-stone-200">
-                                        <Ghost className="w-4 h-4 text-stone-500" />
-                                        Blocked Phrases
-                                    </div>
-                                    <p className="text-xs text-stone-500">Messages containing these words will be rejected.</p>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="Add word or phrase..."
-                                        className="bg-stone-950 border-stone-800 h-10 rounded-xl"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                const val = e.currentTarget.value.trim();
-                                                if (val && !formData.blocked_phrases.includes(val)) {
-                                                    handleUpdateBlockedPhrases([...formData.blocked_phrases, val]);
-                                                    e.currentTarget.value = '';
-                                                }
-                                            }
-                                        }}
-                                    />
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.blocked_phrases.map((phrase) => (
-                                        <div key={phrase} className="flex items-center gap-2 px-3 py-1 rounded-full bg-stone-800 text-stone-300 text-xs border border-stone-700">
-                                            {phrase}
-                                            <button
-                                                onClick={() => handleUpdateBlockedPhrases(formData.blocked_phrases.filter(p => p !== phrase))}
-                                                className="hover:text-white cursor-pointer"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Profile Details */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <Card className="bg-stone-900/30 border-stone-800 shadow-2xl">
-                        <CardHeader>
-                            <div className="flex items-center gap-2 text-stone-500 mb-2">
-                                <User className="w-4 h-4" />
-                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">Public Info</span>
-                            </div>
-                            <CardTitle className="text-white">Profile Customization</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="flex flex-col items-center gap-6 pb-6 border-b border-stone-800/50">
-                                <div className="relative group">
-                                    <div className="w-24 h-24 rounded-full overflow-hidden bg-stone-900 border-2 border-stone-800 shadow-xl relative">
-                                        {formData.avatar_url ? (
-                                            <Image
-                                                src={formData.avatar_url}
-                                                alt="Profile"
-                                                width={96}
-                                                height={96}
-                                                unoptimized
-                                                className={`w-full h-full object-cover transition-opacity ${uploading ? 'opacity-30' : 'opacity-100'}`}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-3xl font-light text-stone-700">
-                                                {formData.username?.[0]?.toUpperCase() || '?'}
-                                            </div>
-                                        )}
-                                        {uploading && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <Loader2 className="w-6 h-6 text-white animate-spin" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white text-black flex items-center justify-center cursor-pointer hover:bg-stone-200 transition-colors shadow-lg border-2 border-black">
-                                        <Camera className="w-4 h-4" />
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            disabled={uploading}
-                                        />
-                                    </label>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-stone-200 font-bold tracking-tight">Profile Picture</p>
-                                    <p className="text-[10px] text-stone-600 uppercase tracking-widest mt-1">PNG, JPG up to 2MB</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Username Handle</label>
-                                <Input
-                                    value={formData.username}
-                                    readOnly
-                                    className="bg-stone-900 border-stone-800 text-stone-500 h-12 rounded-xl cursor-not-allowed"
-                                    placeholder="yourhandle"
-                                />
-                                <p className="text-[10px] text-stone-600 font-mono">This is your unique link identifier and cannot be changed.</p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Display Name</label>
-                                <Input
-                                    value={formData.display_name}
-                                    onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                                    className="bg-stone-950 border-stone-800 focus:border-stone-600 h-12 rounded-xl"
-                                    placeholder="Your Name"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-mono uppercase tracking-[0.2em] text-stone-600">Public Bio</label>
-                                <Textarea
-                                    value={formData.bio}
-                                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                    className="bg-stone-950 border-stone-800 focus:border-stone-600 min-h-[120px] rounded-xl resize-none font-serif"
-                                    placeholder="Tell people what kind of messages you're looking for..."
-                                />
-                            </div>
-
-                            <Button
-                                disabled={saving}
-                                onClick={handleSave}
-                                className="w-full bg-stone-100 text-black hover:bg-white h-12 rounded-xl font-bold shadow-xl shadow-white/5"
+                            <button
+                                onClick={copyLink}
+                                className="bg-[#D4FF00] hover:bg-black hover:text-[#D4FF00] border-4 border-black px-6 py-4 font-black uppercase transition-colors shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
                             >
-                                {saving ? 'Saving changes...' : 'Save Profile'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                                {hasCopied ? <Check className="w-6 h-6" /> : <Copy className="w-6 h-6" />}
+                                Copy
+                            </button>
 
-                {/* Danger Zone */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                    <Card className="bg-stone-900/30 border-red-900/20 shadow-2xl shadow-red-900/5">
-                        <CardHeader>
-                            <div className="flex items-center gap-2 text-red-500 mb-2">
-                                <AlertTriangle className="w-4 h-4" />
-                                <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-red-500/80">Danger Zone</span>
-                            </div>
-                            <CardTitle className="text-red-500">Delete Account</CardTitle>
-                            <CardDescription className="text-red-900/60 uppercase text-[9px] font-mono tracking-widest mt-1">Irreversible Action</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                            <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        disabled={deleting}
-                                        className="w-full bg-red-600 hover:bg-red-700 text-white border-none h-12 rounded-xl font-bold transition-all shadow-xl shadow-red-900/20"
-                                    >
-                                        Permanently Delete Account
-                                    </Button>
+                                    <button className="bg-[#FF80FF] hover:bg-black hover:text-[#FF80FF] border-4 border-black px-6 py-4 font-black uppercase transition-colors shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
+                                        <QrCode className="w-6 h-6" />
+                                    </button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-stone-950 border-stone-800 text-white max-md">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-red-500 flex items-center gap-2">
-                                            <AlertTriangle className="w-5 h-5" />
-                                            Critical Action
-                                        </DialogTitle>
-                                        <DialogDescription className="text-stone-400 pt-2">
-                                            This will permanently delete your account, your profile, and all received messages. This action **cannot be undone**.
-                                        </DialogDescription>
+                                <DialogContent className="bg-white border-4 border-black p-0 overflow-hidden shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] rounded-none">
+                                    <DialogHeader className="bg-[#D4FF00] p-6 border-b-4 border-black">
+                                        <DialogTitle className="text-3xl font-black uppercase tracking-tighter">QR Code</DialogTitle>
                                     </DialogHeader>
-                                    <DialogFooter className="mt-4 gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => setIsDeleteDialogOpen(false)}
-                                            className="text-stone-400 hover:text-white hover:bg-white/5"
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleDeleteAccount}
-                                            disabled={deleting}
-                                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
-                                        >
-                                            {deleting ? 'Deleting...' : 'Yes, Delete Everything'}
-                                        </Button>
-                                    </DialogFooter>
+                                    <div className="p-8 flex flex-col items-center justify-center bg-white space-y-6">
+                                        <div className="p-4 border-4 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                            <Image
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(typeof window !== 'undefined' ? `${window.location.origin}/${formData.username}` : '')}`}
+                                                alt="QR Code"
+                                                width={192}
+                                                height={192}
+                                                unoptimized
+                                                className="w-48 h-48"
+                                            />
+                                        </div>
+                                        <p className="text-xl font-black uppercase tracking-widest text-[#1C7BFF]">
+                                            Scan for @{formData.username}
+                                        </p>
+                                    </div>
                                 </DialogContent>
                             </Dialog>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                        </div>
 
-                <footer className="text-center pt-12 pb-20">
-                    <div className="flex items-center justify-center gap-2 text-stone-700">
-                        <Shield className="w-4 h-4" />
-                        <span className="text-[10px] font-mono uppercase tracking-[0.2em]">End-to-end Encrypted Messaging</span>
+                        <div className="flex flex-wrap gap-4">
+                            <button
+                                onClick={() => {
+                                    const link = `${window.location.origin}/${formData.username}`;
+                                    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝`)}&url=${encodeURIComponent(link)}`, '_blank');
+                                }}
+                                className="bg-[#1C7BFF] hover:bg-black text-black hover:text-white border-4 border-black px-6 flex-1 py-4 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <Twitter className="w-5 h-5 fill-current" /> Share on X
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const link = `${window.location.origin}/${formData.username}`;
+                                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝 ${link}`)}`, '_blank');
+                                }}
+                                className="bg-[#D4FF00] hover:bg-black text-black hover:text-[#D4FF00] border-4 border-black px-6 flex-1 py-4 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <MessageCircle className="w-5 h-5" /> WhatsApp
+                            </button>
+                            <button
+                                onClick={copyLink}
+                                className="bg-[#FF80FF] hover:bg-black text-black hover:text-[#FF80FF] border-4 border-black px-6 flex-1 py-4 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <Instagram className="w-5 h-5" /> IG Story
+                            </button>
+                        </div>
                     </div>
-                </footer>
-            </div>
+                </section>
+
+                {/* Moderation Block */}
+                <section className="bg-[#FF80FF] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="flex items-center gap-2 mb-6 text-black">
+                        <Shield className="w-8 h-8 fill-black" />
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Moderation</h2>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] gap-4">
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black uppercase flex items-center gap-2">
+                                    <Lock className="w-6 h-6 fill-black" /> Pause Inbox
+                                </h3>
+                                <p className="text-lg font-bold">Stop new messages.</p>
+                            </div>
+                            <Switch
+                                checked={formData.is_paused}
+                                onCheckedChange={handleTogglePause}
+                                className="data-[state=checked]:bg-black data-[state=unchecked]:bg-[#1C7BFF] border-4 border-black h-10 w-20 shadow-none [&>span]:h-8 [&>span]:w-8 [&>span]:data-[state=checked]:translate-x-10 [&>span]:border-black"
+                            />
+                        </div>
+
+                        <div className="p-6 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-6">
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-black uppercase flex items-center gap-2">
+                                    <Ghost className="w-6 h-6 fill-black" /> Blocked Phrases
+                                </h3>
+                                <p className="text-lg font-bold">Reject messages with these words.</p>
+                            </div>
+
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <Input
+                                    placeholder="Add word..."
+                                    className="flex-1 border-4 border-black bg-[#D4FF00] h-14 rounded-none text-xl font-bold shadow-inner placeholder:text-black/50"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const val = e.currentTarget.value.trim();
+                                            if (val && !formData.blocked_phrases.includes(val)) {
+                                                handleUpdateBlockedPhrases([...formData.blocked_phrases, val]);
+                                                e.currentTarget.value = '';
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
+
+                            <div className="flex flex-wrap gap-3">
+                                {formData.blocked_phrases.map((phrase) => (
+                                    <div key={phrase} className="flex items-center gap-2 px-4 py-2 bg-black text-white font-bold uppercase border-4 border-black text-sm shadow-[4px_4px_0px_0px_rgba(28,123,255,1)]">
+                                        {phrase}
+                                        <button
+                                            onClick={() => handleUpdateBlockedPhrases(formData.blocked_phrases.filter(p => p !== phrase))}
+                                            className="hover:text-[#FF80FF] transition-colors"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {formData.blocked_phrases.length === 0 && <span className="font-bold text-xl uppercase opacity-50">Empty</span>}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Profile Block */}
+                <section className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="flex items-center gap-2 mb-6">
+                        <User className="w-8 h-8 fill-black" />
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Public Info</h2>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div className="flex flex-col items-center gap-6 pb-8 border-b-4 border-dashed border-black">
+                            <div className="relative group">
+                                <div className="w-32 h-32 md:w-40 md:h-40 bg-[#D4FF00] border-4 border-black rounded-full overflow-hidden flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
+                                    {formData.avatar_url ? (
+                                        <Image
+                                            src={formData.avatar_url}
+                                            alt="Profile"
+                                            width={160}
+                                            height={160}
+                                            unoptimized
+                                            className={`w-full h-full object-cover grayscale transition-opacity ${uploading ? 'opacity-30' : 'opacity-100'}`}
+                                        />
+                                    ) : (
+                                        <span className="text-6xl font-black">{formData.username?.[0]?.toUpperCase()}</span>
+                                    )}
+                                    {uploading && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <Loader2 className="w-8 h-8 text-black animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                <label className="absolute bottom-0 right-0 w-12 h-12 rounded-full bg-black text-white flex items-center justify-center cursor-pointer hover:bg-[#FF80FF] hover:text-black transition-colors border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                    <Camera className="w-6 h-6" />
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        disabled={uploading}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xl font-black uppercase text-black block">Handle</label>
+                            <Input
+                                value={formData.username}
+                                readOnly
+                                className="bg-black text-[#D4FF00] border-4 border-black h-14 rounded-none text-xl font-bold uppercase cursor-not-allowed opacity-80"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xl font-black uppercase text-black block">Display Name</label>
+                            <Input
+                                value={formData.display_name}
+                                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                                className="bg-white border-4 border-black focus:border-black h-14 rounded-none text-xl font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                placeholder="YOUR NAME"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xl font-black uppercase text-black block">Bio</label>
+                            <Textarea
+                                value={formData.bio}
+                                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                className="bg-white border-4 border-black focus:border-black min-h-[160px] rounded-none text-xl font-bold resize-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                placeholder="TELL THE WORLD..."
+                            />
+                        </div>
+
+                        <button
+                            disabled={saving}
+                            onClick={handleSave}
+                            className="w-full bg-black text-white hover:bg-[#1C7BFF] hover:text-black border-4 border-black h-16 text-2xl font-black uppercase tracking-widest transition-colors shadow-[8px_8px_0px_0px_rgba(212,255,0,1)] disabled:opacity-50"
+                        >
+                            {saving ? 'SAVING...' : 'SAVE PROFILE'}
+                        </button>
+                    </div>
+                </section>
+
+                {/* Danger Zone */}
+                <section className="bg-[#FF4040] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-12">
+                    <div className="flex items-center gap-2 mb-6">
+                        <AlertTriangle className="w-8 h-8 fill-black text-black" />
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">DANGER ZONE</h2>
+                    </div>
+                    
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                        <DialogTrigger asChild>
+                            <button
+                                disabled={deleting}
+                                className="w-full bg-black text-white hover:bg-white hover:text-red-600 border-4 border-black h-16 text-2xl font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                            >
+                                DELETE ACCOUNT
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-white border-4 border-black p-0 overflow-hidden shadow-[16px_16px_0px_0px_rgba(255,64,64,1)] rounded-none">
+                            <DialogHeader className="bg-black text-white p-6 border-b-4 border-black">
+                                <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-red-500 whitespace-nowrap overflow-hidden text-ellipsis">A U SURE?</DialogTitle>
+                            </DialogHeader>
+                            <div className="p-8 space-y-8 bg-white text-black">
+                                <p className="text-2xl font-bold uppercase leading-tight">
+                                    THIS WILL DELETE EVERYTHING. CANNOT UNDO.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button
+                                        onClick={() => setIsDeleteDialogOpen(false)}
+                                        className="flex-1 bg-white hover:bg-black hover:text-white border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                    >
+                                        NEVERMIND
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleting}
+                                        className="flex-1 bg-red-600 hover:bg-black text-white border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                    >
+                                        {deleting ? 'DELETING...' : 'BURN IT'}
+                                    </button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </section>
+            </main>
         </div>
     );
 }
