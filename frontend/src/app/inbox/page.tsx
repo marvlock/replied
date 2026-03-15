@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
@@ -338,43 +338,43 @@ function InboxPage() {
     );
 
     return (
-        <div className="min-h-screen bg-black p-4 md:p-8 pb-32 md:pb-8">
-            <div className="max-w-4xl mx-auto">
-                <header className="flex items-center justify-between border-b border-stone-800 pb-6 mb-8 mt-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                            <MessageSquareQuote className="w-6 h-6 text-black" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">Replied</h1>
-                        </div>
+        <div className="min-h-screen bg-[#1C7BFF] text-black selection:bg-[#D4FF00] selection:text-black font-sans pb-32 md:pb-24">
+            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-[#D4FF00] border-b-4 border-black flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-black text-[#D4FF00] border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <MessageSquareQuote className="w-6 h-6" />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Link href="/settings">
-                            <Button variant="ghost" size="icon" className="text-stone-500 hover:text-white border border-stone-800/50 rounded-xl h-10 w-10">
-                                <Settings className="w-5 h-5" />
-                            </Button>
-                        </Link>
-                        <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out" className="text-stone-500 hover:text-red-500 border border-stone-800/50 rounded-xl h-10 w-10">
-                            <LogOut className="w-5 h-5" />
-                        </Button>
+                    <div className="text-2xl font-black uppercase tracking-tighter">
+                        Replied
                     </div>
-                </header>
+                </div>
+                <div className="flex items-center gap-4">
+                    <Link href="/settings">
+                        <button className="w-10 h-10 bg-white border-4 border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <Settings className="w-5 h-5" />
+                        </button>
+                    </Link>
+                    <button onClick={signOut} className="w-10 h-10 bg-[#FF80FF] border-4 border-black flex items-center justify-center hover:bg-black hover:text-[#FF80FF] transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                </div>
+            </nav>
 
-                {/* Desktop Navigation (Top) */}
-                <div className="hidden md:flex flex-wrap gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800 mb-8 overflow-x-auto max-w-full">
+            <main className="pt-32 max-w-4xl mx-auto px-6 space-y-12">
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex flex-wrap gap-4 border-b-4 border-black pb-8">
                     {[
-                        { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-4 h-4" /> },
-                        { id: 'history', label: 'Ledger', icon: <History className="w-4 h-4" /> },
-                        { id: 'feed', label: 'Feed', icon: <Activity className="w-4 h-4" /> },
-                        { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-4 h-4" /> },
-                        { id: 'likes', label: 'Liked', icon: <Heart className="w-4 h-4" /> },
-                        { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
+                        { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" /> },
+                        { id: 'history', label: 'Ledger', icon: <History className="w-5 h-5" /> },
+                        { id: 'feed', label: 'Feed', icon: <Activity className="w-5 h-5" /> },
+                        { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-5 h-5" /> },
+                        { id: 'likes', label: 'Liked', icon: <Heart className="w-5 h-5" /> },
+                        { id: 'account', label: 'Account', icon: <User className="w-5 h-5" /> },
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setView(tab.id as any)}
-                            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${view === tab.id ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                            className={`flex flex-col sm:flex-row items-center justify-center gap-2 flex-1 min-w-[120px] px-4 py-4 border-4 border-black font-black uppercase tracking-widest text-sm transition-all ${view === tab.id ? 'bg-black text-[#D4FF00] translate-y-[4px] shadow-none' : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF80FF]'}`}
                         >
                             {tab.icon}
                             {tab.label}
@@ -382,41 +382,33 @@ function InboxPage() {
                     ))}
                 </div>
 
-                {/* Mobile Navigation (Bottom Bar - iOS style) */}
-                <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe-area-inset-bottom">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl border-t border-white/5" />
-                    <nav className="relative flex items-center justify-around px-2 py-3">
+                {/* Mobile Navigation */}
+                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#D4FF00] border-t-4 border-black px-2 pb-safe-area-inset-bottom">
+                    <nav className="flex items-center justify-around py-3">
                         {[
-                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" /> },
-                            { id: 'history', label: 'Ledger', icon: <History className="w-5 h-5" /> },
-                            { id: 'feed', label: 'Feed', icon: <Activity className="w-5 h-5" /> },
-                            { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-5 h-5" /> },
-                            { id: 'likes', label: 'Liked', icon: <Heart className="w-5 h-5" /> },
-                            { id: 'account', label: 'Account', icon: <User className="w-5 h-5" /> },
+                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-6 h-6" /> },
+                            { id: 'history', label: 'Ledger', icon: <History className="w-6 h-6" /> },
+                            { id: 'feed', label: 'Feed', icon: <Activity className="w-6 h-6" /> },
+                            { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-6 h-6" /> },
+                            { id: 'likes', label: 'Liked', icon: <Heart className="w-6 h-6" /> },
+                            { id: 'account', label: 'Account', icon: <User className="w-6 h-6" /> },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setView(tab.id as any)}
-                                className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${view === tab.id ? 'text-white' : 'text-stone-500'}`}
+                                className={`flex flex-col items-center gap-1 transition-transform ${view === tab.id ? 'scale-110 text-black' : 'text-black/60 hover:text-black'}`}
                             >
-                                <div className={`p-1 rounded-lg transition-all ${view === tab.id ? 'scale-110' : 'scale-100'}`}>
-                                    {tab.icon}
-                                </div>
-                                <span className={`text-[9px] font-black uppercase tracking-wider transition-all ${view === tab.id ? 'opacity-100' : 'opacity-60'}`}>
-                                    {tab.label}
-                                </span>
+                                {tab.icon}
+                                <span className="text-[10px] font-black uppercase tracking-wider">{tab.label}</span>
                                 {view === tab.id && (
-                                    <motion.div
-                                        layoutId="mobile-indicator"
-                                        className="w-1 h-1 rounded-full bg-white absolute -bottom-1"
-                                    />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-black absolute -bottom-2" />
                                 )}
                             </button>
                         ))}
                     </nav>
                 </div>
 
-                <div className="grid gap-6">
+                <div className="grid gap-8">
                     <AnimatePresence mode="wait">
                         {view === 'inbox' ? (
                             messages.length === 0 ? (
@@ -425,113 +417,111 @@ function InboxPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                    className="text-center py-32 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                 >
-                                    <InboxIcon className="w-12 h-12 mx-auto text-stone-700 mb-4" />
-                                    <h3 className="text-lg font-serif italic text-stone-500">Silence is an answer too.</h3>
-                                    <p className="text-stone-600 text-sm">Share your link to get messages.</p>
+                                    <InboxIcon className="w-24 h-24 mx-auto fill-black/5 stroke-black mb-8 stroke-2" />
+                                    <h3 className="text-5xl font-black uppercase tracking-tighter mb-4 text-black">Dead Quiet</h3>
+                                    <p className="text-2xl font-bold uppercase text-black/60">Share your link to get messages.</p>
+                                    <Link href={`/${userProfile?.username}`}>
+                                        <button className="mt-8 bg-[#D4FF00] hover:bg-black hover:text-[#D4FF00] text-black border-4 border-black px-8 py-4 text-xl font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                            View Profile
+                                        </button>
+                                    </Link>
                                 </motion.div>
                             ) : (
-                                <div className="grid gap-6">
+                                <div className="grid gap-8">
                                     {messages.map((msg) => (
                                         <motion.div
                                             key={msg.id}
                                             layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
                                         >
-                                            <Card className="border-stone-800 bg-stone-900/20 backdrop-blur shadow-xl hover:bg-stone-900/30 transition-all border-l-4 border-l-stone-700">
-                                                <CardHeader className="pb-3 px-8 pt-8">
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                                                        <div className="flex items-center gap-2 text-[10px] text-stone-500 uppercase tracking-widest font-bold">
-                                                            <MessageSquareQuote className="w-3 h-3" />
-                                                            Message • {new Date(msg.created_at).toLocaleDateString()}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 self-end sm:self-auto">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                disabled={archiving === msg.id}
-                                                                onClick={() => handleArchive(msg.id)}
-                                                                className="text-stone-500 hover:text-stone-200 hover:bg-white/5 rounded-lg h-8 px-3 text-[10px] uppercase font-bold tracking-wider"
-                                                            >
-                                                                <Archive className="w-3.5 h-3.5 mr-2" />
-                                                                Silence
-                                                            </Button>
-
-                                                            <Dialog open={messageToDelete === msg.id} onOpenChange={(open) => !open && setMessageToDelete(null)}>
-                                                                <DialogTrigger asChild>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        onClick={() => setMessageToDelete(msg.id)}
-                                                                        className="text-stone-700 hover:text-red-500 hover:bg-red-500/10 h-8 w-8 rounded-lg"
-                                                                    >
-                                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="bg-stone-950 border-stone-800 text-white max-w-sm">
-                                                                    <DialogHeader>
-                                                                        <DialogTitle className="flex items-center gap-2">
-                                                                            <AlertTriangle className="w-4 h-4 text-red-500" />
-                                                                            Delete Completely?
-                                                                        </DialogTitle>
-                                                                        <DialogDescription className="text-stone-400">
-                                                                            This will permanently delete the message from the recording.
-                                                                        </DialogDescription>
-                                                                    </DialogHeader>
-                                                                    <DialogFooter className="mt-4 gap-2">
-                                                                        <Button variant="ghost" onClick={() => setMessageToDelete(null)}>Cancel</Button>
-                                                                        <Button variant="destructive" onClick={() => handleDelete(msg.id)}>Delete</Button>
-                                                                    </DialogFooter>
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        </div>
+                                            <div className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
+                                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-2 bg-black text-white px-3 py-1 font-bold uppercase text-sm border-2 border-black w-fit shadow-[4px_4px_0px_0px_rgba(28,123,255,1)]">
+                                                        <MessageSquareQuote className="w-4 h-4" />
+                                                        {new Date(msg.created_at).toLocaleDateString()}
                                                     </div>
-                                                    <CardTitle className="text-xl leading-relaxed font-serif italic text-stone-200">
-                                                        &quot;{msg.content}&quot;
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="px-8 pb-8">
+                                                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                                                        <button
+                                                            disabled={archiving === msg.id}
+                                                            onClick={() => handleArchive(msg.id)}
+                                                            className="bg-[#D4FF00] hover:bg-black hover:text-[#D4FF00] text-black border-4 border-black px-4 py-2 font-black uppercase text-sm flex items-center gap-2 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
+                                                        >
+                                                            <Archive className="w-4 h-4" />
+                                                            Silence
+                                                        </button>
+                                                        <Dialog open={messageToDelete === msg.id} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+                                                            <DialogTrigger asChild>
+                                                                <button
+                                                                    onClick={() => setMessageToDelete(msg.id)}
+                                                                    className="bg-[#FF4040] hover:bg-black hover:text-[#FF4040] text-black border-4 border-black p-2 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-white border-4 border-black p-0 overflow-hidden shadow-[16px_16px_0px_0px_rgba(255,64,64,1)] rounded-none">
+                                                                <DialogHeader className="bg-[#FF4040] p-6 border-b-4 border-black">
+                                                                    <DialogTitle className="text-3xl font-black uppercase tracking-tighter flex items-center gap-2 text-black">
+                                                                        <AlertTriangle className="w-8 h-8 fill-black stroke-[#FF4040]" />
+                                                                        NUKE THIS?
+                                                                    </DialogTitle>
+                                                                    <DialogDescription className="text-xl font-bold text-black/80 uppercase mt-2">
+                                                                        This deletes it from existence. Forever.
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                                <DialogFooter className="p-6 bg-white flex flex-col sm:flex-row gap-4">
+                                                                    <button onClick={() => setMessageToDelete(null)} className="flex-1 bg-white hover:bg-black hover:text-white border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">Cancel</button>
+                                                                    <button onClick={() => handleDelete(msg.id)} className="flex-1 bg-black text-white hover:text-[#FF4040] border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(255,64,64,1)]">Nuke</button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </div>
+                                                
+                                                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight mb-8">
+                                                    "{msg.content}"
+                                                </h2>
+
+                                                <div className="mt-auto">
                                                     {replyingTo === msg.id ? (
-                                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pt-4">
+                                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                                                             <Textarea
                                                                 autoFocus
-                                                                placeholder="Your thoughtful response..."
-                                                                className="bg-stone-950/50 border-stone-800 focus:border-stone-600 resize-none min-h-[120px] font-serif p-6 rounded-2xl text-lg shadow-inner"
+                                                                placeholder="TYPE YOUR RESPONSE..."
+                                                                className="bg-[#D4FF00] border-4 border-black focus-visible:ring-0 rounded-none text-2xl font-black uppercase p-6 min-h-[160px] shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.1)] resize-none text-black placeholder:text-black/30"
                                                                 value={replyContent}
                                                                 onChange={(e) => setReplyContent(e.target.value)}
                                                             />
-                                                            <div className="flex gap-3">
-                                                                <Button
+                                                            <div className="flex flex-col sm:flex-row gap-4">
+                                                                <button
                                                                     disabled={publishing || !replyContent.trim()}
                                                                     onClick={() => handleReply(msg.id)}
-                                                                    className="flex-1 bg-white text-black hover:bg-stone-200 h-12 rounded-xl font-bold"
+                                                                    className="flex-1 bg-black text-[#1C7BFF] hover:text-white border-4 border-black py-4 text-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-[4px_4px_0px_0px_rgba(28,123,255,1)] disabled:opacity-50"
                                                                 >
-                                                                    {publishing ? 'Publishing...' : 'Reply & Publish'}
-                                                                    <SendHorizontal className="w-4 h-4 ml-2" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
+                                                                    {publishing ? 'SENDING...' : 'PUBLISH'}
+                                                                    <SendHorizontal className="w-6 h-6" />
+                                                                </button>
+                                                                <button
                                                                     onClick={() => setReplyingTo(null)}
-                                                                    className="text-stone-400 hover:text-white rounded-xl px-6"
+                                                                    className="sm:w-32 bg-white hover:bg-black hover:text-white border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                                                                 >
-                                                                    Cancel
-                                                                </Button>
+                                                                    DROP
+                                                                </button>
                                                             </div>
                                                         </motion.div>
                                                     ) : (
-                                                        <Button
-                                                            variant="secondary"
+                                                        <button
                                                             onClick={() => setReplyingTo(msg.id)}
-                                                            className="bg-stone-800/50 text-stone-200 hover:bg-stone-700 hover:text-white border-stone-700 h-12 px-8 rounded-xl font-semibold transition-all"
+                                                            className="w-full bg-[#1C7BFF] hover:bg-black text-black hover:text-[#1C7BFF] border-4 border-black py-6 text-2xl font-black uppercase tracking-widest transition-colors shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                                         >
-                                                            Respond to this
-                                                        </Button>
+                                                            Respond
+                                                        </button>
                                                     )}
-                                                </CardContent>
-                                            </Card>
+                                                </div>
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -543,69 +533,67 @@ function InboxPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                    className="text-center py-32 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                 >
-                                    <History className="w-12 h-12 mx-auto text-stone-700 mb-4" />
-                                    <h3 className="text-lg font-serif italic text-stone-500">The record is empty.</h3>
-                                    <p className="text-stone-600 text-sm">Archived and replied messages will appear here.</p>
+                                    <History className="w-24 h-24 mx-auto fill-black/5 stroke-black mb-8 stroke-2" />
+                                    <h3 className="text-5xl font-black uppercase tracking-tighter mb-4 text-black">Clean Slate</h3>
+                                    <p className="text-2xl font-bold uppercase text-black/60">No history yet.</p>
                                 </motion.div>
                             ) : (
-                                <div className="grid gap-6">
+                                <div className="grid gap-8">
                                     {historyMessages.map((msg) => (
                                         <motion.div
                                             key={msg.id}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                         >
-                                            <Card className="border-stone-900 bg-stone-950/20 backdrop-blur border-l-4 border-l-stone-800 opacity-80">
-                                                <CardHeader className="p-8">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-4">
-                                                            {msg.status === 'replied' ? (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 text-[9px] font-black tracking-widest uppercase">
-                                                                    <CheckCircle2 className="w-3 h-3" />
-                                                                    Published
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-stone-500/10 text-stone-500 text-[9px] font-black tracking-widest uppercase">
-                                                                    <XCircle className="w-3 h-3" />
-                                                                    Silenced
-                                                                </div>
-                                                            )}
-                                                            <span className="text-[9px] text-stone-600 font-mono uppercase tracking-widest">
-                                                                {new Date(msg.created_at).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDelete(msg.id)}
-                                                            className="text-stone-800 hover:text-red-500 hover:bg-red-500/10 rounded-lg"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
+                                            <div className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        {msg.status === 'replied' ? (
+                                                            <div className="bg-[#D4FF00] text-black border-2 border-black px-3 py-1 font-black uppercase text-xs sm:text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2">
+                                                                <CheckCircle2 className="w-4 h-4 stroke-[3px]" />
+                                                                Published
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-black text-white border-2 border-black px-3 py-1 font-black uppercase text-xs sm:text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2">
+                                                                <XCircle className="w-4 h-4 stroke-[3px]" />
+                                                                Silenced
+                                                            </div>
+                                                        )}
+                                                        <span className="text-xs sm:text-sm font-bold uppercase bg-white border-2 border-black px-3 py-1">
+                                                            {new Date(msg.created_at).toLocaleDateString()}
+                                                        </span>
                                                     </div>
-                                                    <CardTitle className="text-lg leading-relaxed font-serif italic text-stone-400">
-                                                        &quot;{msg.content}&quot;
-                                                    </CardTitle>
+                                                    <button
+                                                        onClick={() => handleDelete(msg.id)}
+                                                        className="self-end sm:self-auto bg-[#FF4040] hover:bg-black hover:text-[#FF4040] border-4 border-black p-2 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                                                    >
+                                                        <Trash2 className="w-5 h-5 text-black hover:text-[#FF4040] transition-colors" />
+                                                    </button>
+                                                </div>
+                                                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-tight opacity-50 mb-8 line-through decoration-4 decoration-black">
+                                                    "{msg.content}"
+                                                </h2>
 
-                                                    {(() => {
-                                                        const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
-                                                        if (!reply || !reply.content) return null;
+                                                {(() => {
+                                                    const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
+                                                    if (!reply || !reply.content) return null;
 
-                                                        return (
-                                                            <div className="mt-6 pt-6 border-t border-stone-900">
-                                                                <div className="flex items-center gap-2 mb-3">
-                                                                    <span className="text-[9px] font-mono text-stone-600 uppercase tracking-widest font-bold">Your Official Response</span>
+                                                    return (
+                                                        <div className="pt-8 border-t-8 border-black border-dashed">
+                                                            <div className="bg-[#FF80FF] text-black border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+                                                                <div className="absolute -top-4 left-6 bg-black text-white px-4 py-1.5 font-black uppercase text-sm border-2 border-black">
+                                                                    Response
                                                                 </div>
-                                                                <p className="text-stone-200 font-serif leading-relaxed">
+                                                                <p className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-tight mt-4">
                                                                     {reply.content}
                                                                 </p>
                                                             </div>
-                                                        );
-                                                    })()}
-                                                </CardHeader>
-                                            </Card>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -617,62 +605,65 @@ function InboxPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                    className="text-center py-32 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                 >
-                                    <Activity className="w-12 h-12 mx-auto text-stone-700 mb-4" />
-                                    <h3 className="text-lg font-serif italic text-stone-500">The pulse is quiet.</h3>
-                                    <p className="text-stone-600 text-sm">Add friends to see their public conversations here.</p>
+                                    <Activity className="w-24 h-24 mx-auto stroke-black mb-8 stroke-2" />
+                                    <h3 className="text-5xl font-black uppercase tracking-tighter mb-4 text-black">No Pulse</h3>
+                                    <p className="text-xl font-bold uppercase text-black/60">Add users to track their activity.</p>
                                     <Link href="/friends">
-                                        <Button variant="outline" className="mt-6 border-stone-800 rounded-xl">Find Friends</Button>
+                                        <button className="mt-8 bg-[#D4FF00] hover:bg-black hover:text-[#D4FF00] text-black border-4 border-black px-8 py-4 text-xl font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                            Find Users
+                                        </button>
                                     </Link>
                                 </motion.div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {feedMessages.map((msg: any) => (
                                         <motion.div
                                             key={msg.id}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                         >
-                                            <Card className="bg-stone-900/30 border-stone-800 hover:border-stone-700 transition-all group overflow-hidden rounded-3xl h-full flex flex-col">
-                                                <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-stone-700 flex-shrink-0">
+                                            <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full hover:translate-x-1 hover:-translate-y-1 transition-transform">
+                                                <div className="p-6 border-b-4 border-black flex flex-row items-center gap-4 bg-[#D4FF00]">
+                                                    <div className="w-12 h-12 rounded-none bg-white border-4 border-black flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
                                                         {msg.profiles?.avatar_url ? (
                                                             <img src={msg.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-stone-500">
+                                                            <span className="text-xl font-black text-black">
                                                                 {msg.profiles?.username?.[0]?.toUpperCase()}
-                                                            </div>
+                                                            </span>
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <Link href={`/${msg.profiles?.username}`} className="text-white font-bold hover:underline truncate block text-sm">
+                                                        <Link href={`/${msg.profiles?.username}`} className="text-black font-black uppercase tracking-widest text-lg hover:underline truncate block">
                                                             @{msg.profiles?.username}
                                                         </Link>
-                                                        <div className="flex items-center gap-2 text-[9px] text-stone-600 font-mono uppercase tracking-widest">
-                                                            <Clock className="w-3 h-3" />
+                                                        <div className="flex items-center gap-2 text-xs text-black font-bold uppercase tracking-widest mt-1">
+                                                            <Clock className="w-3 h-3 stroke-[3px]" />
                                                             {new Date(msg.created_at).toLocaleDateString()}
                                                         </div>
                                                     </div>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4 flex-1 flex flex-col">
-                                                    <div className="bg-black/40 p-4 rounded-2xl border border-stone-800/50 flex-1">
-                                                        <p className="text-stone-300 italic font-serif text-sm italic leading-relaxed">&quot;{msg.content}&quot;</p>
+                                                </div>
+                                                <div className="p-6 flex-1 flex flex-col gap-6">
+                                                    <div className="bg-[#1C7BFF] p-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                        <p className="text-black text-2xl font-black uppercase leading-tight">"{msg.content}"</p>
                                                     </div>
                                                     {msg.replies?.[0] && (
-                                                        <div className="flex gap-3 pt-2">
-                                                            <div className="w-0.5 bg-stone-800 rounded-full" />
-                                                            <div className="flex-1 py-1">
-                                                                <p className="text-[9px] text-stone-600 font-black mb-1 uppercase tracking-widest flex items-center gap-1">
-                                                                    <MessageSquareQuote className="w-3 h-3" />
+                                                        <div className="flex flex-col gap-2 mt-auto">
+                                                            <div className="flex items-center gap-2">
+                                                                <MessageSquareQuote className="w-4 h-4 text-[#FF4040] stroke-[3px]" />
+                                                                <span className="text-sm font-black text-[#FF4040] uppercase tracking-widest">
                                                                     Response
-                                                                </p>
-                                                                <p className="text-stone-200 text-xs leading-relaxed font-serif">{msg.replies[0].content}</p>
+                                                                </span>
                                                             </div>
+                                                            <p className="text-black text-xl font-bold uppercase pl-6 border-l-4 border-black">
+                                                                {msg.replies[0].content}
+                                                            </p>
                                                         </div>
                                                     )}
-                                                </CardContent>
-                                            </Card>
+                                                </div>
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -684,56 +675,56 @@ function InboxPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                    className="text-center py-32 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                 >
-                                    <Bookmark className="w-12 h-12 mx-auto text-stone-700 mb-4" />
-                                    <h3 className="text-lg font-serif italic text-stone-500">Nothing saved yet.</h3>
-                                    <p className="text-stone-600 text-sm">Bookmarks from public profiles will appear here.</p>
+                                    <Bookmark className="w-24 h-24 mx-auto stroke-black mb-8 stroke-2" />
+                                    <h3 className="text-5xl font-black uppercase tracking-tighter mb-4 text-black">No Saves</h3>
+                                    <p className="text-xl font-bold uppercase text-black/60">Saved posts from public profiles appear here.</p>
                                 </motion.div>
                             ) : (
-                                <div className="grid gap-6">
+                                <div className="grid gap-8">
                                     {bookmarkMessages.map((msg) => (
                                         <motion.div
                                             key={msg.id}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                         >
-                                            <Card className="border-stone-800 bg-stone-900/40 backdrop-blur-xl rounded-3xl overflow-hidden hover:border-stone-700 transition-all">
-                                                <CardHeader className="p-8">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                                            <span className="text-[10px] text-stone-500 font-mono uppercase tracking-[0.3em] font-black">
-                                                                Saved Insight • @{msg.profiles?.username}
-                                                            </span>
-                                                        </div>
-                                                        <Link href={`/${msg.profiles?.username}`}>
-                                                            <Button variant="ghost" size="sm" className="text-[9px] uppercase tracking-widest font-bold text-stone-500 hover:text-white">
-                                                                View Profile
-                                                            </Button>
-                                                        </Link>
+                                            <div className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-3 h-3 bg-[#1C7BFF] border-2 border-black" />
+                                                        <span className="text-sm text-black font-black uppercase tracking-[0.2em] border-2 border-black px-3 py-1 bg-[#D4FF00]">
+                                                            SAVED • @{msg.profiles?.username}
+                                                        </span>
                                                     </div>
-                                                    <CardTitle className="text-xl leading-relaxed font-serif italic text-stone-300">
-                                                        &quot;{msg.content}&quot;
-                                                    </CardTitle>
+                                                    <Link href={`/${msg.profiles?.username}`}>
+                                                        <button className="bg-[#1C7BFF] hover:bg-black hover:text-[#1C7BFF] text-black border-4 border-black px-4 py-2 text-sm font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                            View
+                                                        </button>
+                                                    </Link>
+                                                </div>
+                                                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight mb-8">
+                                                    "{msg.content}"
+                                                </h2>
 
-                                                    {(() => {
-                                                        const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
-                                                        if (!reply || !reply.content) return null;
+                                                {(() => {
+                                                    const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
+                                                    if (!reply || !reply.content) return null;
 
-                                                        return (
-                                                            <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-white/5">
-                                                                <div className="flex items-center gap-2 mb-3">
-                                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest font-bold">Official Response</span>
+                                                    return (
+                                                        <div className="pt-8 border-t-8 border-black border-dashed mt-8">
+                                                            <div className="bg-[#FF80FF] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+                                                                <div className="absolute -top-4 left-6 bg-black text-white px-4 py-1.5 font-black uppercase text-sm border-2 border-black">
+                                                                    Official Response
                                                                 </div>
-                                                                <p className="text-stone-200 font-serif leading-relaxed italic">
+                                                                <p className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-tight text-black mt-4">
                                                                     {reply.content}
                                                                 </p>
                                                             </div>
-                                                        );
-                                                    })()}
-                                                </CardHeader>
-                                            </Card>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -745,56 +736,56 @@ function InboxPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="text-center py-20 border-2 border-dashed border-stone-800 rounded-3xl"
+                                    className="text-center py-32 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                                 >
-                                    <Heart className="w-12 h-12 mx-auto text-stone-700 mb-4" />
-                                    <h3 className="text-lg font-serif italic text-stone-500">No hearts yet.</h3>
-                                    <p className="text-stone-600 text-sm">Messages you heart will be collected here.</p>
+                                    <Heart className="w-24 h-24 mx-auto stroke-black mb-8 stroke-2" />
+                                    <h3 className="text-5xl font-black uppercase tracking-tighter mb-4 text-black">No Likes</h3>
+                                    <p className="text-xl font-bold uppercase text-black/60">Posts you like will be collected here.</p>
                                 </motion.div>
                             ) : (
-                                <div className="grid gap-6">
+                                <div className="grid gap-8">
                                     {likedMessages.map((msg) => (
                                         <motion.div
                                             key={msg.id}
                                             initial={{ opacity: 0, scale: 0.98 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                         >
-                                            <Card className="border-stone-800 bg-stone-900/40 backdrop-blur-xl rounded-3xl overflow-hidden hover:border-red-500/30 transition-all border-l-4 border-l-red-500/50">
-                                                <CardHeader className="p-8">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <Heart className="w-3 h-3 text-red-500 fill-current" />
-                                                            <span className="text-[10px] text-stone-500 font-mono uppercase tracking-[0.3em] font-black">
-                                                                Liked Moment • @{msg.profiles?.username}
-                                                            </span>
-                                                        </div>
-                                                        <Link href={`/${msg.profiles?.username}`}>
-                                                            <Button variant="ghost" size="sm" className="text-[9px] uppercase tracking-widest font-bold text-stone-500 hover:text-white">
-                                                                Explore more
-                                                            </Button>
-                                                        </Link>
+                                            <div className="bg-white border-4 border-black border-l-8 border-l-[#FF4040] p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <Heart className="w-5 h-5 text-[#FF4040] fill-current" />
+                                                        <span className="text-sm text-black font-black uppercase tracking-[0.2em] border-2 border-black px-3 py-1 bg-[#FF4040] text-white">
+                                                            LIKED • @{msg.profiles?.username}
+                                                        </span>
                                                     </div>
-                                                    <CardTitle className="text-xl leading-relaxed font-serif italic text-stone-100">
-                                                        &quot;{msg.content}&quot;
-                                                    </CardTitle>
+                                                    <Link href={`/${msg.profiles?.username}`}>
+                                                        <button className="bg-white hover:bg-[#FF4040] hover:text-white text-black border-4 border-black px-4 py-2 text-sm font-black uppercase tracking-widest transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                            View
+                                                        </button>
+                                                    </Link>
+                                                </div>
+                                                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight mb-8">
+                                                    "{msg.content}"
+                                                </h2>
 
-                                                    {(() => {
-                                                        const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
-                                                        if (!reply || !reply.content) return null;
+                                                {(() => {
+                                                    const reply = Array.isArray(msg.replies) ? msg.replies[0] : msg.replies;
+                                                    if (!reply || !reply.content) return null;
 
-                                                        return (
-                                                            <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-white/5 relative">
-                                                                <div className="flex items-center gap-2 mb-3">
-                                                                    <span className="text-[9px] font-mono text-stone-500 uppercase tracking-widest font-bold">Official Response</span>
+                                                    return (
+                                                        <div className="pt-8 border-t-8 border-black border-dashed mt-8">
+                                                            <div className="bg-black text-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(255,128,255,1)] relative">
+                                                                <div className="absolute -top-4 left-6 bg-[#D4FF00] text-black px-4 py-1.5 font-black uppercase text-sm border-2 border-black">
+                                                                    Official Response
                                                                 </div>
-                                                                <p className="text-stone-200 font-serif leading-relaxed italic">
+                                                                <p className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-tight mt-4">
                                                                     {reply.content}
                                                                 </p>
                                                             </div>
-                                                        );
-                                                    })()}
-                                                </CardHeader>
-                                            </Card>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -810,120 +801,130 @@ function InboxPage() {
                                 {/* Account Identity Header Preview */}
                                 <Link
                                     href={`/${userProfile?.username}`}
-                                    className="p-8 rounded-[32px] bg-stone-900/20 border border-white/5 backdrop-blur-sm flex flex-col sm:flex-row items-center gap-6 hover:bg-stone-900/40 hover:border-white/10 transition-all group cursor-pointer"
+                                    className="p-8 md:p-12 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row items-center gap-8 hover:translate-x-1 hover:-translate-y-1 transition-transform cursor-pointer"
                                 >
-                                    <div className="w-20 h-20 rounded-full overflow-hidden bg-stone-800 border-2 border-stone-700 flex-shrink-0 group-hover:border-white/20 transition-all group-hover:scale-105 transform">
+                                    <div className="w-32 h-32 bg-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(212,255,0,1)] flex flex-col items-center justify-center overflow-hidden flex-shrink-0">
                                         {userProfile?.avatar_url ? (
-                                            <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-2xl font-black text-stone-500">
+                                            <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white">
                                                 {userProfile?.username?.[0]?.toUpperCase()}
                                             </div>
                                         )}
                                     </div>
-                                    <div className="text-center sm:text-left flex-1">
-                                        <div className="flex items-center justify-center sm:justify-start gap-2">
-                                            <h2 className="text-2xl font-black text-white italic tracking-tight group-hover:text-primary transition-colors">@{userProfile?.username}</h2>
+                                    <div className="text-center sm:text-left flex-1 max-w-2xl">
+                                        <h2 className="text-4xl md:text-6xl font-black text-black tracking-tighter uppercase mb-2">@{userProfile?.username}</h2>
+                                        <div className="inline-block bg-black text-[#D4FF00] font-bold text-xs uppercase tracking-widest px-4 py-2 border-2 border-black mb-4">
+                                            {userProfile?.display_name || 'Anonymous User'}
                                         </div>
-                                        <p className="text-stone-500 font-mono text-[10px] uppercase tracking-[0.2em] mt-1">{userProfile?.display_name || 'Anonymous User'}</p>
-                                        <p className="text-stone-400 text-sm mt-3 font-serif italic line-clamp-2 max-w-xl">{userProfile?.bio || 'No bio yet. Define your curation style in settings.'}</p>
+                                        <p className="text-black text-xl font-bold uppercase opacity-80 border-l-4 border-black pl-4 py-1">
+                                            {userProfile?.bio || 'No bio yet. Define your curation style in settings.'}
+                                        </p>
+                                    </div>
+                                    <div className="hidden sm:flex self-start justify-end w-full sm:w-auto h-full items-start">
+                                        <div className="w-12 h-12 bg-black flex items-center justify-center animate-pulse">
+                                            <div className="w-4 h-4 rounded-full bg-[#D4FF00]" />
+                                        </div>
                                     </div>
                                 </Link>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Friends Preview Card */}
-                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden flex flex-col h-full">
-                                        <CardHeader className="p-8">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                                                    <Users className="w-6 h-6 text-blue-500" />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className="text-xl font-black italic text-white uppercase tracking-tight">Connections</CardTitle>
-                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">{friends.length} Active Friends</p>
-                                                </div>
+                                    <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
+                                        <div className="p-8 border-b-4 border-black flex items-center gap-4 bg-[#1C7BFF]">
+                                            <div className="w-16 h-16 bg-black flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+                                                <Users className="w-8 h-8 text-white" />
                                             </div>
+                                            <div>
+                                                <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Network</h3>
+                                                <p className="text-sm text-black font-black uppercase tracking-widest bg-[#D4FF00] inline-block px-2 border-2 border-black mt-1">
+                                                    {friends.length} Active
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                            <div className="min-h-[60px] flex items-center">
-                                                {friends.length === 0 ? (
-                                                    <p className="text-stone-600 text-sm italic">Your network is empty. Find creators to see their feed.</p>
-                                                ) : (
-                                                    <div className="flex -space-x-3 overflow-hidden py-2">
-                                                        {friends.slice(0, 5).map((friend, i) => (
-                                                            <div key={i} className="inline-block h-12 w-12 rounded-full bg-stone-800 border-2 border-stone-950 overflow-hidden ring-4 ring-black/10" title={friend.username}>
-                                                                {friend.avatar_url ? (
-                                                                    <img src={friend.avatar_url} className="h-full w-full object-cover" />
-                                                                ) : (
-                                                                    <div className="h-full w-full flex items-center justify-center text-xs text-stone-500 font-black">
-                                                                        {friend.username?.[0]?.toUpperCase()}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                        {friends.length > 5 && (
-                                                            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-stone-900 border-2 border-stone-950 text-[10px] font-black text-stone-400">
-                                                                +{friends.length - 5}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="px-8 pb-8 pt-0 mt-auto">
+                                        <div className="p-8 pb-0 min-h-[100px] flex items-center bg-[url('/noise.png')] bg-repeat opacity-90">
+                                            {friends.length === 0 ? (
+                                                <p className="text-black text-xl font-bold uppercase text-center w-full bg-white p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                    Your network is dead.<br/>Find some noise.
+                                                </p>
+                                            ) : (
+                                                <div className="flex -space-x-4 overflow-hidden py-4 px-2">
+                                                    {friends.slice(0, 5).map((friend, i) => (
+                                                        <div key={i} className="inline-block h-16 w-16 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden z-10" title={friend.username}>
+                                                            {friend.avatar_url ? (
+                                                                <img src={friend.avatar_url} className="h-full w-full object-cover grayscale" />
+                                                            ) : (
+                                                                <div className="text-xl font-black text-black">
+                                                                    {friend.username?.[0]?.toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {friends.length > 5 && (
+                                                        <div className="flex items-center justify-center h-16 w-16 bg-black border-4 border-black text-lg font-black text-[#D4FF00] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-20">
+                                                            +{friends.length - 5}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-8 mt-auto">
                                             <Link href="/friends">
-                                                <Button className="w-full rounded-2xl bg-white text-black hover:bg-stone-200 transition-all font-bold h-12 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                                                    Manage Friends
-                                                </Button>
+                                                <button className="w-full bg-black text-white hover:bg-[#D4FF00] hover:text-black border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                    Manage Network
+                                                </button>
                                             </Link>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </div>
 
                                     {/* Settings Preview Card */}
-                                    <Card className="bg-stone-900/30 border-stone-800 rounded-[32px] overflow-hidden flex flex-col h-full">
-                                        <CardHeader className="p-8">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                                                    <Settings className="w-6 h-6 text-purple-500" />
-                                                </div>
-                                                <div>
-                                                    <CardTitle className="text-xl font-black italic text-white uppercase tracking-tight">Preferences</CardTitle>
-                                                    <p className="text-[10px] text-stone-600 font-mono uppercase tracking-widest">Global Control</p>
-                                                </div>
+                                    <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full">
+                                        <div className="p-8 border-b-4 border-black flex items-center gap-4 bg-[#FF80FF]">
+                                            <div className="w-16 h-16 bg-black flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+                                                <Settings className="w-8 h-8 text-white" />
                                             </div>
+                                            <div>
+                                                <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Config</h3>
+                                                <p className="text-sm text-black font-black uppercase tracking-widest bg-white inline-block px-2 border-2 border-black mt-1">
+                                                    Control Panel
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between text-sm py-3 border-b border-white/5">
-                                                    <span className="text-stone-400 font-medium">Inbox Status</span>
-                                                    <span className={userProfile?.is_paused ? "text-red-500 font-black uppercase text-[10px] tracking-widest px-2 py-1 rounded bg-red-500/10" : "text-green-500 font-black uppercase text-[10px] tracking-widest px-2 py-1 rounded bg-green-500/10"}>
-                                                        {userProfile?.is_paused ? 'Paused' : 'Active'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm py-3">
-                                                    <span className="text-stone-400 font-medium">Filters</span>
-                                                    <span className="text-white font-black text-[10px] tracking-widest px-2 py-1 rounded bg-white/5">
-                                                        {userProfile?.blocked_phrases?.length || 0} BLOCKED
-                                                    </span>
-                                                </div>
+                                        <div className="p-8 space-y-6 flex-1 bg-[url('/noise.png')] bg-repeat opacity-95">
+                                            <div className="bg-white p-4 border-4 border-black flex items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                <span className="text-black font-bold uppercase text-lg">Inbox Status</span>
+                                                <span className={userProfile?.is_paused ? "text-white font-black uppercase tracking-widest px-4 py-2 bg-[#FF4040] border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : "text-black font-black uppercase tracking-widest px-4 py-2 bg-[#D4FF00] border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"}>
+                                                    {userProfile?.is_paused ? 'Paused' : 'Active'}
+                                                </span>
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="px-8 pb-8 pt-0 mt-auto">
+                                            <div className="bg-white p-4 border-4 border-black flex items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                <span className="text-black font-bold uppercase text-lg">Word Filters</span>
+                                                <span className="text-white font-black uppercase tracking-widest px-4 py-2 bg-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,128,255,1)]">
+                                                    {userProfile?.blocked_phrases?.length || 0} Blocked
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-8 mt-auto border-t-4 border-black">
                                             <Link href="/settings">
-                                                <Button className="w-full rounded-2xl bg-white text-black hover:bg-stone-200 transition-all font-bold h-12 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                                                    Detailed Settings
-                                                </Button>
+                                                <button className="w-full bg-black text-white hover:bg-[#FF80FF] hover:text-black border-4 border-black py-4 text-xl font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                    Full Config
+                                                </button>
                                             </Link>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div >
-            </div >
-        </div >
+                </div>
+            </main>
+        </div>
     );
 }
-import { Suspense } from 'react';
 
 export default function SuspenseInboxPage() {
     return (

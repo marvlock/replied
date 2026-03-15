@@ -152,59 +152,43 @@ export default function FriendsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-stone-200 p-4 md:p-8 pb-32 md:pb-8">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <header className="flex items-center gap-4 md:gap-6 border-b border-stone-800 pb-8 mb-8 mt-2">
-                    <Link href="/inbox" className="shrink-0">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-stone-900/40 border border-stone-800/50 hover:bg-white hover:text-black transition-all shadow-xl group"
-                        >
-                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-x-1 transition-transform" />
-                        </Button>
-                    </Link>
-                    <div className="flex-1">
-                        <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white uppercase italic leading-none">Friends</h1>
-                        <p className="text-stone-500 text-[10px] md:text-sm font-mono md:font-sans uppercase md:normal-case tracking-[0.2em] md:tracking-normal mt-2">
-                            Connections & Network
-                        </p>
-                    </div>
-                </header>
+        <div className="min-h-screen bg-[#FF80FF] text-black selection:bg-black selection:text-white font-sans pb-32 md:pb-24">
+            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-[#1C7BFF] border-b-4 border-black flex items-center gap-4">
+                <Link href="/inbox" className="shrink-0">
+                    <button className="w-10 h-10 md:w-12 md:h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-black hover:text-[#1C7BFF] transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                </Link>
+                <div className="text-2xl font-black uppercase tracking-tighter text-black">
+                    Connections
+                </div>
+            </nav>
 
+            <main className="pt-32 max-w-4xl mx-auto px-6 space-y-12">
                 {/* Navigation Tabs */}
-                <div className="flex gap-2 p-1 bg-stone-900/50 rounded-2xl w-fit border border-stone-800">
+                <div className="flex flex-wrap gap-4 border-b-4 border-black pb-8">
                     <button
                         onClick={() => setActiveTab('list')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'list' ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                        className={`flex-1 min-w-[140px] px-4 py-4 border-4 border-black font-black uppercase tracking-widest text-sm md:text-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'list' ? 'bg-[#D4FF00] text-black translate-y-[4px] shadow-none' : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Friend List
-                        </div>
+                        <Users className="w-5 h-5 flex-shrink-0" /> Directory
                     </button>
                     <button
                         onClick={() => setActiveTab('requests')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all relative ${activeTab === 'requests' ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                        className={`flex-1 min-w-[140px] px-4 py-4 border-4 border-black font-black uppercase tracking-widest text-sm md:text-lg transition-all flex items-center justify-center gap-2 relative ${activeTab === 'requests' ? 'bg-[#D4FF00] text-black translate-y-[4px] shadow-none' : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <UserPlus className="w-4 h-4" />
-                            Requests
-                            {requests.length > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black" />}
-                        </div>
+                        <UserPlus className="w-5 h-5 flex-shrink-0" /> Requests
+                        {requests.length > 0 && <span className="absolute -top-3 -right-3 w-6 h-6 bg-red-600 rounded-full border-4 border-black flex items-center justify-center text-[10px] text-white animate-pulse" />}
                     </button>
                     <button
                         onClick={() => setActiveTab('search')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'search' ? 'bg-white text-black shadow-xl' : 'text-stone-500 hover:text-white'}`}
+                        className={`flex-1 min-w-[140px] px-4 py-4 border-4 border-black font-black uppercase tracking-widest text-sm md:text-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'search' ? 'bg-[#D4FF00] text-black translate-y-[4px] shadow-none' : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-black hover:text-white'}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <Search className="w-4 h-4" />
-                            Find Users
-                        </div>
+                        <Search className="w-5 h-5 flex-shrink-0" /> Add
                     </button>
                 </div>
 
-                <main className="min-h-[400px]">
+                <div className="min-h-[400px]">
                     <AnimatePresence mode="wait">
                         {activeTab === 'list' && (
                             <motion.div
@@ -212,7 +196,7 @@ export default function FriendsPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
                                 {loading ? (
                                     <div className="col-span-full h-64 flex items-center justify-center">
@@ -220,51 +204,45 @@ export default function FriendsPage() {
                                     </div>
                                 ) : friendsList.length > 0 ? (
                                     friendsList.map((friend: any) => (
-                                        <Card key={friend.username} className="bg-stone-900/30 border-stone-800 hover:border-stone-700 transition-all group overflow-hidden">
-                                            <CardHeader className="flex flex-row items-center gap-4 pb-4">
-                                                <div className="w-12 h-12 rounded-full overflow-hidden bg-stone-800 border border-stone-700">
+                                        <div key={friend.username} className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-6 group hover:-translate-y-2 transition-transform duration-200">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-[#D4FF00] flex-shrink-0">
                                                     {friend.avatar_url ? (
-                                                        <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                        <img src={friend.avatar_url} alt="" className="w-full h-full object-cover grayscale" />
                                                     ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-stone-500 uppercase">
-                                                            {friend.username?.[0]}
+                                                        <div className="w-full h-full flex items-center justify-center text-3xl font-black text-black">
+                                                            {friend.username?.[0]?.toUpperCase()}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <Link href={`/${friend.username}`} className="text-white font-bold hover:underline truncate block">
+                                                <div className="flex-1 min-w-0 overflow-hidden">
+                                                    <Link href={`/${friend.username}`} className="text-xl font-black uppercase truncate block hover:text-[#1C7BFF] transition-colors">
                                                         @{friend.username}
                                                     </Link>
-                                                    <p className="text-xs text-stone-500 truncate">{friend.display_name || friend.username}</p>
+                                                    <p className="text-sm font-bold uppercase truncate text-black/60">{friend.display_name || friend.username}</p>
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => unfriend(friend.friendship_id)}
-                                                    className="w-full text-stone-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-bold flex items-center gap-2"
-                                                >
-                                                    <UserMinus className="w-4 h-4" />
-                                                    Unfriend
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                            <button
+                                                onClick={() => unfriend(friend.friendship_id)}
+                                                className="w-full bg-black text-white hover:bg-[#FF4040] hover:text-black border-4 border-black py-3 font-black uppercase text-sm flex items-center justify-center gap-2 transition-colors mt-auto"
+                                            >
+                                                <UserMinus className="w-4 h-4" /> Drop
+                                            </button>
+                                        </div>
                                     ))
                                 ) : (
-                                    <div className="col-span-full py-20 text-center space-y-4 bg-stone-900/20 rounded-3xl border border-dashed border-stone-800">
-                                        <Users className="w-12 h-12 text-stone-800 mx-auto" />
+                                    <div className="col-span-full py-20 text-center space-y-6 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] px-6">
+                                        <Users className="w-20 h-20 fill-black mx-auto" />
                                         <div>
-                                            <p className="text-stone-500 font-bold">You haven't added anyone yet.</p>
-                                            <p className="text-stone-700 text-sm">Find users to build your circle.</p>
+                                            <p className="text-4xl font-black uppercase tracking-tighter mb-2">Empty Squad</p>
+                                            <p className="text-xl font-bold uppercase">Time to recruit some homies.</p>
                                         </div>
-                                        <Button
-                                            variant="outline"
+                                        <button
                                             onClick={() => setActiveTab('search')}
-                                            className="bg-transparent border-stone-800 rounded-xl"
+                                            className="bg-[#D4FF00] hover:bg-black text-black hover:text-[#D4FF00] border-4 border-black px-8 py-4 font-black uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block mt-4"
                                         >
                                             Find People
-                                        </Button>
+                                        </button>
                                     </div>
                                 )}
                             </motion.div>
@@ -276,37 +254,40 @@ export default function FriendsPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="max-w-md mx-auto space-y-4"
+                                className="max-w-2xl mx-auto space-y-6"
                             >
                                 {requests.length > 0 ? (
                                     requests.map((req: any) => (
-                                        <div key={req.id} className="flex items-center gap-4 p-4 rounded-2xl bg-stone-900 border border-stone-800">
-                                            <div className="w-12 h-12 rounded-full overflow-hidden bg-stone-800">
-                                                {req.profiles?.avatar_url ? (
-                                                    <img src={req.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center font-bold text-stone-500">
-                                                        {req.profiles?.username?.[0]?.toUpperCase()}
-                                                    </div>
-                                                )}
+                                        <div key={req.id} className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform">
+                                            <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
+                                                <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-[#1C7BFF] shrink-0">
+                                                    {req.profiles?.avatar_url ? (
+                                                        <img src={req.profiles.avatar_url} alt="" className="w-full h-full object-cover grayscale" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-3xl font-black text-black">
+                                                            {req.profiles?.username?.[0]?.toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 pr-4">
+                                                    <p className="text-2xl font-black uppercase truncate">@{req.profiles?.username}</p>
+                                                    <p className="text-sm font-bold uppercase text-black/60 truncate">{req.profiles?.display_name}</p>
+                                                </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-white font-bold">@{req.profiles?.username}</p>
-                                                <p className="text-xs text-stone-500 truncate">{req.profiles?.display_name}</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="icon"
+                                            <div className="flex gap-4 w-full sm:w-auto">
+                                                <button
                                                     onClick={() => acceptRequest(req.id)}
-                                                    className="rounded-full bg-white text-black hover:bg-stone-200"
+                                                    className="flex-1 sm:flex-none border-4 border-black bg-[#D4FF00] hover:bg-black hover:text-[#D4FF00] p-4 flex justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors group"
                                                 >
-                                                    <Check className="w-4 h-4" />
-                                                </Button>
+                                                    <Check className="w-6 h-6 stroke-[3px]" />
+                                                </button>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-20 text-stone-600 italic">No pending requests</div>
+                                    <div className="text-center py-20 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                        <p className="text-3xl font-black uppercase tracking-widest">No pending requests</p>
+                                    </div>
                                 )}
                             </motion.div>
                         )}
@@ -317,122 +298,90 @@ export default function FriendsPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="max-w-md mx-auto space-y-6"
+                                className="max-w-2xl mx-auto space-y-8"
                             >
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 group-focus-within:text-white transition-colors">
+                                <div className="relative">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none">
                                         {searching ? (
-                                            <div className="w-4 h-4 border-2 border-stone-500 border-t-white rounded-full animate-spin" />
+                                            <div className="w-6 h-6 border-4 border-black border-t-[#1C7BFF] rounded-full animate-spin" />
                                         ) : (
-                                            <Search className="w-4 h-4" />
+                                            <Search className="w-6 h-6 fill-black stroke-black opacity-50" />
                                         )}
                                     </div>
                                     <Input
-                                        placeholder="Search by username..."
+                                        placeholder="SEARCH USERNAME..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="h-14 pl-12 pr-12 bg-stone-900 border-stone-800 rounded-2xl focus:ring-2 focus:ring-white/10 transition-all font-medium placeholder:text-stone-600"
+                                        className="h-20 pl-16 pr-16 bg-white border-4 border-black rounded-none focus-visible:ring-0 text-2xl font-black uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/30"
                                     />
                                     {searchQuery && (
                                         <button
                                             onClick={() => setSearchQuery('')}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-white transition-colors p-1"
+                                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-black text-white hover:bg-[#FF4040] hover:text-black border-4 border-black p-2 transition-colors"
                                         >
-                                            <X className="w-4 h-4" />
+                                            <X className="w-4 h-4 stroke-[3px]" />
                                         </button>
                                     )}
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {searchResults.map((user: any) => {
                                         const isMe = user.id === currentUserId;
                                         const isFriend = friendsList.some(f => f.id === user.id);
 
                                         return (
-                                            <div key={user.id} className="flex items-center gap-4 p-4 rounded-2xl bg-stone-900/50 border border-stone-800/50 hover:bg-stone-900 transition-colors">
-                                                <Link href={`/${user.username}`} className="flex items-center gap-4 flex-1">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-800 border border-white/5">
+                                            <div key={user.id} className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform">
+                                                <Link href={`/${user.username}`} className="flex items-center gap-4 flex-1 w-full relative">
+                                                    <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-black bg-[#D4FF00] shrink-0">
                                                         {user.avatar_url ? (
-                                                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover grayscale" />
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center font-bold text-stone-500">
+                                                            <div className="w-full h-full flex items-center justify-center text-3xl font-black text-black">
                                                                 {user.username?.[0]?.toUpperCase()}
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-white text-sm font-bold">@{user.username}</p>
-                                                        <p className="text-[10px] text-stone-500 font-mono uppercase tracking-widest">{user.display_name || 'View Profile'}</p>
+                                                    <div className="flex-1 min-w-0 pr-4">
+                                                        <p className="text-2xl font-black uppercase truncate group-hover:underline">@{user.username}</p>
+                                                        <p className="text-sm font-bold uppercase truncate text-black/60">{user.display_name || 'View Profile'}</p>
                                                     </div>
                                                 </Link>
 
-                                                {isMe ? (
-                                                    <span className="px-4 py-1.5 rounded-xl bg-white/5 text-stone-400 text-[10px] font-black uppercase tracking-widest border border-white/5">
-                                                        Me
-                                                    </span>
-                                                ) : isFriend ? (
-                                                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest border border-green-500/20">
-                                                        <Check className="w-3 h-3" />
-                                                        Added
-                                                    </div>
-                                                ) : (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            sendRequest(user.id);
-                                                        }}
-                                                        className="border-stone-800 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold h-8"
-                                                    >
-                                                        Add Friend
-                                                    </Button>
-                                                )}
+                                                <div className="w-full sm:w-auto shrink-0 mt-4 sm:mt-0">
+                                                    {isMe ? (
+                                                        <span className="w-full sm:w-32 bg-black text-[#D4FF00] block text-center py-4 font-black uppercase tracking-widest border-4 border-black shadow-[4px_4px_0px_0px_rgba(212,255,0,1)]">
+                                                            ME
+                                                        </span>
+                                                    ) : isFriend ? (
+                                                        <span className="w-full sm:w-32 flex items-center justify-center gap-2 bg-[#D4FF00] text-black py-4 font-black uppercase tracking-widest border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                            <Check className="w-5 h-5 stroke-[3px]" /> ADDED
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                sendRequest(user.id);
+                                                            }}
+                                                            className="w-full sm:w-32 bg-white hover:bg-black hover:text-[#D4FF00] text-black py-4 font-black uppercase tracking-widest border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors text-xs"
+                                                        >
+                                                            Add Friend
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}
                                     {searchResults.length === 0 && searchQuery.length >= 2 && !searching && (
-                                        <p className="text-center text-stone-600 text-sm italic">No users found.</p>
+                                        <div className="p-8 bg-black text-white border-4 border-black text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                            <p className="text-2xl font-black uppercase">Nobody found ¯\_(ツ)_/¯</p>
+                                        </div>
                                     )}
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </main>
-                {/* Mobile Navigation (Bottom Bar - iOS style) */}
-                <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe-area-inset-bottom">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl border-t border-white/5" />
-                    <nav className="relative flex items-center justify-around px-2 py-3">
-                        {[
-                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-5 h-5" />, href: '/inbox?tab=inbox' },
-                            { id: 'ledger', label: 'Ledger', icon: <History className="w-5 h-5" />, href: '/inbox?tab=history' },
-                            { id: 'feed', label: 'Feed', icon: <Activity className="w-5 h-5" />, href: '/inbox?tab=feed' },
-                            { id: 'saved', label: 'Saved', icon: <Bookmark className="w-5 h-5" />, href: '/inbox?tab=bookmarks' },
-                            { id: 'liked', label: 'Liked', icon: <Heart className="w-5 h-5" />, href: '/inbox?tab=likes' },
-                            { id: 'account', label: 'Account', icon: <User className="w-5 h-5" />, href: '/inbox?tab=account' },
-                        ].map((tab) => (
-                            <Link
-                                key={tab.id}
-                                href={tab.href}
-                                className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${tab.id === 'account' ? 'text-white' : 'text-stone-500'}`}
-                            >
-                                <div className={`p-1 rounded-lg transition-all ${tab.id === 'account' ? 'scale-110' : 'scale-100'}`}>
-                                    {tab.icon}
-                                </div>
-                                <span className={`text-[9px] font-black uppercase tracking-wider transition-all ${tab.id === 'account' ? 'opacity-100' : 'opacity-60'}`}>
-                                    {tab.label}
-                                </span>
-                                {tab.id === 'account' && (
-                                    <motion.div
-                                        layoutId="mobile-indicator"
-                                        className="w-1 h-1 rounded-full bg-white absolute -bottom-1"
-                                    />
-                                )}
-                            </Link>
-                        ))}
-                    </nav>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }
