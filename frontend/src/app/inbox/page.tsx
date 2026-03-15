@@ -360,6 +360,32 @@ function InboxPage() {
                 </div>
             </nav>
 
+            {/* Mobile Bottom Navigation — outside main to ensure fixed positioning works */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#D4FF00] border-t-4 border-black">
+                <nav className="flex items-center justify-around py-3 pb-4">
+                    {[
+                        { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-6 h-6" /> },
+                        { id: 'history', label: 'Ledger', icon: <History className="w-6 h-6" /> },
+                        { id: 'feed', label: 'Feed', icon: <Activity className="w-6 h-6" /> },
+                        { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-6 h-6" /> },
+                        { id: 'likes', label: 'Liked', icon: <Heart className="w-6 h-6" /> },
+                        { id: 'account', label: 'Account', icon: <User className="w-6 h-6" /> },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setView(tab.id as any)}
+                            className={`flex flex-col items-center gap-1 transition-transform ${view === tab.id ? 'scale-110 text-black' : 'text-black/60 hover:text-black'}`}
+                        >
+                            {tab.icon}
+                            <span className="text-[10px] font-black uppercase tracking-wider">{tab.label}</span>
+                            {view === tab.id && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                            )}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
             <main className="pt-32 max-w-4xl mx-auto px-6 space-y-12">
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex flex-wrap gap-4 border-b-4 border-black pb-8">
@@ -380,32 +406,6 @@ function InboxPage() {
                             {tab.label}
                         </button>
                     ))}
-                </div>
-
-                {/* Mobile Navigation */}
-                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#D4FF00] border-t-4 border-black px-2" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-                    <nav className="flex items-center justify-around py-3">
-                        {[
-                            { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-6 h-6" /> },
-                            { id: 'history', label: 'Ledger', icon: <History className="w-6 h-6" /> },
-                            { id: 'feed', label: 'Feed', icon: <Activity className="w-6 h-6" /> },
-                            { id: 'bookmarks', label: 'Saved', icon: <Bookmark className="w-6 h-6" /> },
-                            { id: 'likes', label: 'Liked', icon: <Heart className="w-6 h-6" /> },
-                            { id: 'account', label: 'Account', icon: <User className="w-6 h-6" /> },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setView(tab.id as any)}
-                                className={`flex flex-col items-center gap-1 transition-transform ${view === tab.id ? 'scale-110 text-black' : 'text-black/60 hover:text-black'}`}
-                            >
-                                {tab.icon}
-                                <span className="text-[10px] font-black uppercase tracking-wider">{tab.label}</span>
-                                {view === tab.id && (
-                                    <div className="w-1.5 h-1.5 rounded-full bg-black absolute -bottom-2" />
-                                )}
-                            </button>
-                        ))}
-                    </nav>
                 </div>
 
                 <div className="grid gap-8">
