@@ -287,9 +287,9 @@ export default function SettingsPage() {
                                         <QrCode className="w-6 h-6" />
                                     </button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-white border-4 border-black p-0 overflow-hidden shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] rounded-none">
+                                <DialogContent className="bg-white border-4 border-black p-0 overflow-hidden shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] rounded-none [&>button]:bg-black [&>button]:text-white [&>button]:border-2 [&>button]:border-black [&>button]:rounded-none [&>button]:top-4 [&>button]:right-4 [&>button]:opacity-100">
                                     <DialogHeader className="bg-[#D4FF00] p-6 border-b-4 border-black">
-                                        <DialogTitle className="text-3xl font-black uppercase tracking-tighter">QR Code</DialogTitle>
+                                        <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-black">QR Code</DialogTitle>
                                     </DialogHeader>
                                     <div className="p-8 flex flex-col items-center justify-center bg-white space-y-6">
                                         <div className="p-4 border-4 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                                                 className="w-48 h-48"
                                             />
                                         </div>
-                                        <p className="text-xl font-black uppercase tracking-widest text-[#1C7BFF]">
+                                        <p className="text-xl font-black uppercase tracking-widest text-black">
                                             Scan for @{formData.username}
                                         </p>
                                     </div>
@@ -316,9 +316,9 @@ export default function SettingsPage() {
                                     const link = `${window.location.origin}/${formData.username}`;
                                     window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`Send me anonymous messages on Replied! 📝`)}&url=${encodeURIComponent(link)}`, '_blank');
                                 }}
-                                className="bg-[#1C7BFF] hover:bg-black text-black hover:text-white border-4 border-black px-6 flex-1 py-4 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-colors"
+                                className="bg-[#1C7BFF] hover:bg-black text-black hover:text-white border-4 border-black px-6 flex-1 py-4 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
                             >
-                                <Twitter className="w-5 h-5 fill-current" /> Share on X
+                                <Twitter className="w-5 h-5 fill-current shrink-0" /> Share on X
                             </button>
                             <button
                                 onClick={() => {
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                             <Switch
                                 checked={formData.is_paused}
                                 onCheckedChange={handleTogglePause}
-                                className="data-[state=checked]:bg-black data-[state=unchecked]:bg-[#1C7BFF] border-4 border-black h-10 w-20 shadow-none [&>span]:h-8 [&>span]:w-8 [&>span]:data-[state=checked]:translate-x-10 [&>span]:border-black"
+                                className="data-[state=checked]:bg-[#FF80FF] data-[state=unchecked]:bg-[#1C7BFF] border-4 border-black h-10 w-20 shadow-none [&>span]:h-8 [&>span]:w-8 [&>span]:data-[state=checked]:translate-x-10 [&>span]:border-black [&>span]:bg-white"
                             />
                         </div>
 
@@ -450,7 +450,7 @@ export default function SettingsPage() {
                             <Input
                                 value={formData.username}
                                 readOnly
-                                className="bg-black text-[#D4FF00] border-4 border-black h-14 rounded-none text-xl font-bold uppercase cursor-not-allowed opacity-80"
+                                className="bg-white text-black border-4 border-black h-14 rounded-none text-xl font-bold uppercase cursor-not-allowed opacity-70 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                             />
                         </div>
 
