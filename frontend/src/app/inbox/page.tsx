@@ -383,7 +383,7 @@ function InboxPage() {
                 </div>
 
                 {/* Mobile Navigation */}
-                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#D4FF00] border-t-4 border-black px-2 pb-safe-area-inset-bottom">
+                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#D4FF00] border-t-4 border-black px-2" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
                     <nav className="flex items-center justify-around py-3">
                         {[
                             { id: 'inbox', label: 'Inbox', icon: <InboxIcon className="w-6 h-6" /> },
@@ -821,11 +821,7 @@ function InboxPage() {
                                             {userProfile?.bio || 'No bio yet. Define your curation style in settings.'}
                                         </p>
                                     </div>
-                                    <div className="hidden sm:flex self-start justify-end w-full sm:w-auto h-full items-start">
-                                        <div className="w-12 h-12 bg-black flex items-center justify-center animate-pulse">
-                                            <div className="w-4 h-4 rounded-full bg-[#D4FF00]" />
-                                        </div>
-                                    </div>
+
                                 </Link>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

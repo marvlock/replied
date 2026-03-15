@@ -152,7 +152,7 @@ export default function FriendsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FF80FF] text-black selection:bg-black selection:text-white font-sans pb-32 md:pb-24">
+        <div className="min-h-screen bg-white text-black selection:bg-[#D4FF00] selection:text-black font-sans pb-32 md:pb-24">
             <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-[#1C7BFF] border-b-4 border-black flex items-center gap-4">
                 <Link href="/inbox" className="shrink-0">
                     <button className="w-10 h-10 md:w-12 md:h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-black hover:text-[#1C7BFF] transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -312,7 +312,7 @@ export default function FriendsPage() {
                                         placeholder="SEARCH USERNAME..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="h-20 pl-16 pr-16 bg-white border-4 border-black rounded-none focus-visible:ring-0 text-2xl font-black uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/30"
+                                        className="h-20 pl-16 pr-16 bg-white border-4 border-black rounded-none focus-visible:ring-0 text-2xl font-black uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] placeholder:text-black/30 text-black"
                                     />
                                     {searchQuery && (
                                         <button
