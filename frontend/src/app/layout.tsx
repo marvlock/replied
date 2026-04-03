@@ -28,9 +28,6 @@ export const metadata: Metadata = {
     title: "Replied — Curated Silence",
     description: "Share your link, receive honest messages, and publish response.",
   },
-  icons: {
-    icon: "/icon.svg",
-  },
 };
 
 import { TooltipProvider } from "@/components/ui/tooltip";
